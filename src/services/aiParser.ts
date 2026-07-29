@@ -1,4 +1,4 @@
-import { GoogleGenAI } from '@google/genai';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import { Product, AIParsingResult } from '../types';
 
 export const buildGeminiSystemInstruction = (products: Product[]): string => {
@@ -54,17 +54,17 @@ export const parseVoiceTranscript = async (
     throw new Error('Chưa cài đặt Gemini API Key trong Cài đặt.');
   }
 
-  const ai = new GoogleGenAI({ apiKey });
+  const genAI = new GoogleGenerativeAI(apiKey);
   const systemInstruction = buildGeminiSystemInstruction(products);
 
-  const response = await ai.models.generateContent({
-    model: 'gemini-2.0-flash',
-    contents: [{ role: 'user', parts: [{ text: `Ghi âm giọng nói người dùng: "${transcript}"` }] }],
-    config: {
-      systemInstruction,
+  const model = genAI.getGenerativeModel({
+    model: 'gemini-1.5-flash',
+    systemInstruction,
+    generationConfig: {
       responseMimeType: 'application/json',
     },
   });
 
-  return parseAIResponse(response.text || '{}');
+  const response = await model.generateContent(`Ghi âm giọng nói người dùng: "${transcript}"`);
+  return parseAIResponse(response.response.text() || '{}');
 };
