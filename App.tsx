@@ -4,9 +4,12 @@ import { initDB } from './src/services/db';
 import { HomeScreen } from './src/screens/HomeScreen';
 import { ProductCatalogScreen } from './src/screens/ProductCatalogScreen';
 import { InvoiceHistoryScreen } from './src/screens/InvoiceHistoryScreen';
+import { SettingsScreen } from './src/screens/SettingsScreen';
+
+type ActiveTab = 'home' | 'products' | 'history' | 'settings';
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<'home' | 'products' | 'history'>('home');
+  const [activeTab, setActiveTab] = useState<ActiveTab>('home');
   const [dbReady, setDbReady] = useState(false);
 
   useEffect(() => {
@@ -31,9 +34,12 @@ export default function App() {
       <StatusBar barStyle="dark-content" />
       
       <View style={styles.content}>
-        {activeTab === 'home' && <HomeScreen />}
+        {activeTab === 'home' && (
+          <HomeScreen onOpenSettings={() => setActiveTab('settings')} />
+        )}
         {activeTab === 'products' && <ProductCatalogScreen />}
         {activeTab === 'history' && <InvoiceHistoryScreen />}
+        {activeTab === 'settings' && <SettingsScreen />}
       </View>
 
       <View style={styles.navBar}>
@@ -45,6 +51,9 @@ export default function App() {
         </TouchableOpacity>
         <TouchableOpacity style={styles.navItem} onPress={() => setActiveTab('history')}>
           <Text style={[styles.navText, activeTab === 'history' && styles.activeNav]}>📊 Báo Cáo</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.navItem} onPress={() => setActiveTab('settings')}>
+          <Text style={[styles.navText, activeTab === 'settings' && styles.activeNav]}>Cài đặt</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>

@@ -2,20 +2,39 @@ import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator, Alert } from 'react-native';
 import { getProductsFromDB } from '../services/db';
 import { parseVoiceTranscript } from '../services/aiParser';
+import { getGeminiApiKey } from '../services/geminiSettingsService';
 import { MatchedItem } from '../types';
 import { DraftInvoiceModal } from '../components/DraftInvoiceModal';
 
-export const HomeScreen: React.FC = () => {
+const SAFE_PARSER_MESSAGES = new Set([
+  'Chưa có Gemini API Key',
+  'API Key không hợp lệ hoặc đã bị thu hồi',
+  'Gemini đang giới hạn lượt sử dụng',
+  'Không thể kết nối Gemini',
+  'Gemini trả về dữ liệu không hợp lệ',
+  'Không thể xử lý yêu cầu Gemini',
+]);
+
+const getSafeParserErrorMessage = (error: unknown): string =>
+  error instanceof Error && SAFE_PARSER_MESSAGES.has(error.message)
+    ? error.message
+    : 'Không thể xử lý yêu cầu Gemini';
+
+export interface HomeScreenProps {
+  onOpenSettings: () => void;
+}
+
+export const HomeScreen: React.FC<HomeScreenProps> = ({ onOpenSettings }) => {
   const [isRecording, setIsRecording] = useState(false);
   const [loading, setLoading] = useState(false);
   const [transcript, setTranscript] = useState('');
   const [matchedItems, setMatchedItems] = useState<MatchedItem[]>([]);
   const [draftVisible, setDraftVisible] = useState(false);
 
-  // Gemini API Key retrieved from process environment or settings
-  const apiKey = process.env.EXPO_PUBLIC_GEMINI_API_KEY || '';
-
-  const handleSimulatedVoiceTest = async (testVoiceString: string) => {
+  const handleSimulatedVoiceTest = async (
+    testVoiceString: string,
+    apiKey: string
+  ) => {
     setTranscript(testVoiceString);
     setLoading(true);
 
@@ -39,10 +58,46 @@ export const HomeScreen: React.FC = () => {
 
       setMatchedItems(mappedItems);
       setDraftVisible(true);
-    } catch (err: any) {
-      Alert.alert('Lỗi phân tích AI', err.message || 'Không thể gọi Gemini API');
+    } catch (err: unknown) {
+      Alert.alert(
+        'Lỗi phân tích AI',
+        getSafeParserErrorMessage(err)
+      );
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleMicrophonePress = async () => {
+    if (isRecording || loading) return;
+
+    try {
+      const apiKey = await getGeminiApiKey();
+      if (!apiKey) {
+        Alert.alert(
+          'Chưa có Gemini API Key',
+          'Hãy thêm API Key để VoiceBill có thể phân tích hóa đơn.',
+          [
+            { text: 'Để sau', style: 'cancel' },
+            { text: 'Mở Cài đặt', onPress: onOpenSettings },
+          ]
+        );
+        return;
+      }
+
+      setIsRecording(true);
+      setTimeout(() => {
+        setIsRecording(false);
+        void handleSimulatedVoiceTest(
+          'bán cho chị 1kg ST, à không lấy 2kg ST với 2 cân rưỡi Bắc Hướng',
+          apiKey
+        );
+      }, 2500);
+    } catch {
+      Alert.alert(
+        'Không thể đọc API Key',
+        'Hãy mở Cài đặt và lưu lại Gemini API Key.'
+      );
     }
   };
 
@@ -52,16 +107,9 @@ export const HomeScreen: React.FC = () => {
       <Text style={styles.subtitle}>Nhấn Nút Micro Để Nói Khẩu Lệnh Bán Hàng</Text>
 
       <TouchableOpacity
+        testID="voice-microphone-button"
         style={[styles.micBtn, isRecording && styles.recordingActive]}
-        onPress={() => {
-          setIsRecording(!isRecording);
-          if (!isRecording) {
-            setTimeout(() => {
-              setIsRecording(false);
-              handleSimulatedVoiceTest('bán cho chị 1kg ST, à không lấy 2kg ST với 2 cân rưỡi Bắc Hướng');
-            }, 2500);
-          }
-        }}
+        onPress={handleMicrophonePress}
       >
         <Text style={styles.micText}>{isRecording ? '🔴 Đang Nghe...' : '🎙️'}</Text>
       </TouchableOpacity>
