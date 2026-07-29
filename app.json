@@ -1,0 +1,36 @@
+{
+  "expo": {
+    "name": "VoiceBill",
+    "slug": "voicebill",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#10B981"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.voicebill.app",
+      "infoPlist": {
+        "NSSpeechRecognitionUsageDescription": "VoiceBill cần quyền sử dụng Speech Recognition để bóc tách hóa đơn bằng giọng nói.",
+        "NSMicrophoneUsageDescription": "VoiceBill cần quyền truy cập Micro để thu âm khẩu lệnh tạo hóa đơn."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#10B981"
+      },
+      "package": "com.voicebill.app",
+      "permissions": [
+        "RECORD_AUDIO"
+      ]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    }
+  }
+}
