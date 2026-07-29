@@ -11,11 +11,20 @@
       "resizeMode": "contain",
       "backgroundColor": "#10B981"
     },
+    "plugins": [
+      [
+        "expo-speech-recognition",
+        {
+          "microphonePermission": "VoiceBill cần quyền truy cập Micro để thu âm khẩu lệnh tạo hóa đơn.",
+          "speechRecognitionPermission": "VoiceBill cần quyền sử dụng Nhận dạng giọng nói để bóc tách hóa đơn bằng giọng nói."
+        }
+      ]
+    ],
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.voicebill.app",
       "infoPlist": {
-        "NSSpeechRecognitionUsageDescription": "VoiceBill cần quyền sử dụng Speech Recognition để bóc tách hóa đơn bằng giọng nói.",
+        "NSSpeechRecognitionUsageDescription": "VoiceBill cần quyền sử dụng Nhận dạng giọng nói để bóc tách hóa đơn bằng giọng nói.",
         "NSMicrophoneUsageDescription": "VoiceBill cần quyền truy cập Micro để thu âm khẩu lệnh tạo hóa đơn."
       }
     },
