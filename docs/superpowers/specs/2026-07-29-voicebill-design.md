@@ -1,7 +1,7 @@
 # VoiceBill - Voice Retail Invoice Mobile App Design Document
 
 **Date**: 2026-07-29  
-**Status**: Approved & Reviewed  
+**Status**: Approved & Stress-Tested (Grill-Tested)  
 **Target Platform**: React Native (Expo SDK 51+)  
 
 ---
@@ -14,10 +14,10 @@ The application listens to spoken phrases (e.g., *"1kg ST, 2 Kg tám thái"*), u
 
 ### Key Features
 1. **Voice Input & AI Invoice Parsing**: Convert voice input to text and automatically parse line items against existing product catalog.
-2. **Product Catalog & Alias Management**: Add, update, delete products with custom units, unit prices, and alternative keywords/aliases (e.g. "ST", "ST25" for "Gạo ST25").
-3. **Retail Business Capabilities**: Support discount input, customer payment / cash change calculation ("Khách đưa - Tiền thừa"), and customer notes.
-4. **Local Storage & Offline Readiness**: 100% local data storage on device using SQLite (`expo-sqlite`). Manual line item editing supported if offline.
-5. **Excel Export**: Export invoice history filtered by Day, Week, or Month into downloadable `.xlsx` files.
+2. **Smart Correction & Homophone Handling**: AI automatically parses mid-sentence corrections (*"à không"*, *"thôi bỏ"*) and flags low-confidence homophone matches in yellow for easy visual verification.
+3. **Product Catalog & Alias Management**: Add, update, delete products with custom units, unit prices, and alternative keywords/aliases (e.g. "ST", "ST25" for "Gạo ST25").
+4. **Retail Business Capabilities**: Support custom unit price edits on draft invoice, discount input, customer payment / cash change calculation ("Khách đưa - Tiền thừa"), and customer notes.
+5. **Local Storage & Excel Reporting**: 100% local data storage on device using SQLite (`expo-sqlite`). Export detailed invoice reports by Day, Week, or Month into `.xlsx` spreadsheet files.
 
 ---
 
@@ -41,15 +41,15 @@ sequenceDiagram
     participant DB as SQLite DB
     participant AI as Gemini 2.0 Flash API
 
-    User->>App: Tap Microphone & Speak ("1kg ST, 2 Kg tám thái")
+    User->>App: Tap Microphone & Speak ("1kg ST, à không lấy 2kg ST với 1 cân tám thái")
     App->>STT: Start Voice Recording
-    STT-->>App: Return Transcribed Text ("1kg ST, 2 Kg tám thái")
+    STT-->>App: Return Transcribed Text
     App->>DB: Fetch Active Product List + Aliases
     DB-->>App: Return Catalog ([{id: 1, name: "Gạo ST25", aliases: "ST, ST25", price: 33000}, ...])
     App->>AI: Send Transcribed Text + Product Catalog Context
-    AI-->>App: Return Structured JSON Matched Items ([{productId: 1, quantity: 1, unit: "kg"}, ...])
-    App->>App: Calculate Subtotals, Grand Total & Change
-    App->>User: Display Draft Invoice Modal (Editable)
+    AI-->>App: Return Structured JSON Matched Items with Confidence ([{productId: 1, quantity: 2, confidence: 0.95}, ...])
+    App->>App: Calculate Subtotals, Grand Total & Flag Low-Confidence Items
+    App->>User: Display Draft Invoice Modal (Yellow highlight for uncertain items)
     User->>App: Confirm & Save Invoice
     App->>DB: Save Invoice & Invoice Items to SQLite
     DB-->>App: Confirmation Success
@@ -68,7 +68,7 @@ Stores registered store items, unit prices, and search aliases.
 | `name` | TEXT | NOT NULL UNIQUE | Official product name (e.g., "Gạo ST25") |
 | `aliases` | TEXT | NULLABLE | Comma-separated shorthand keywords (e.g., "ST, ST25, Sóc Trăng") |
 | `unit` | TEXT | NOT NULL DEFAULT 'kg' | Unit of measurement (e.g., "kg", "túi", "bao") |
-| `unit_price` | REAL | NOT NULL | Unit price in VND (e.g., 33000) |
+| `unit_price` | REAL | NOT NULL | Default unit price in VND (e.g., 33000) |
 | `created_at` | DATETIME | DEFAULT CURRENT_TIMESTAMP | Timestamp created |
 
 ### Table: `invoices`
@@ -98,7 +98,7 @@ Stores individual line items within an invoice.
 | `product_name` | TEXT | NOT NULL | Snapshot of product name at sale time |
 | `quantity` | REAL | NOT NULL | Quantity sold |
 | `unit` | TEXT | NOT NULL | Unit measurement |
-| `unit_price` | REAL | NOT NULL | Snapshot of unit price at sale time |
+| `unit_price` | REAL | NOT NULL | Snapshot of unit price at sale time (editable) |
 | `amount` | REAL | NOT NULL | Subtotal (`quantity * unit_price`) |
 
 ---
@@ -113,14 +113,14 @@ Stores individual line items within an invoice.
 ```json
 {
   "role": "system",
-  "content": "Bạn là trợ lý AI cho ứng dụng bán lẻ VoiceBill. Nhiệm vụ của bạn là bóc tách thông tin sản phẩm và số lượng từ văn bản giọng nói.\n\nQUY TẮC BẮT BUỘC:\n1. BẠN CHỈ ĐƯỢC PHÉP KHỚP VỚI CÁC SẢN PHẨM TRONG DANH SÁCH available_products (dựa vào name hoặc aliases).\n2. Quy đổi các đại lượng số lượng Tiếng Việt:\n   - 'nửa cân' / 'nửa ký' -> 0.5\n   - 'lạng' -> 0.1\n   - 'yến' -> 10\n   - 'tạ' -> 100\n   - 'chục cân' -> 10\n   - 'cân', 'ký', 'kg', 'kí' -> quy đổi về dạng số thực (ví dụ '2 cân rưỡi' -> 2.5).\n3. Bỏ qua các từ thừa hoặc từ không khớp sản phẩm.\n4. Trả về mảng JSON đúng theo định dạng schema."
+  "content": "Bạn là trợ lý AI cho ứng dụng bán lẻ VoiceBill. Nhiệm vụ của bạn là bóc tách thông tin sản phẩm và số lượng từ văn bản giọng nói.\n\nQUY TẮC BẮT BUỘC:\n1. BẠN CHỈ ĐƯỢC PHÉP KHỚP VỚI CÁC SẢN PHẨM TRONG DANH SÁCH available_products (dựa vào name hoặc aliases).\n2. XỬ LÝ ĐÍNH CHÍNH / SỬA KHẨU LỆNH:\n   - Nếu phát hiện từ đính chính như 'à không', 'thôi bỏ', 'sửa thành', 'lấy nhầm', hãy cập nhật hoặc hủy sản phẩm đứng trước đó.\n3. Quy đổi các đại lượng số lượng Tiếng Việt:\n   - 'nửa cân' / 'nửa ký' -> 0.5\n   - 'lạng' -> 0.1\n   - 'yến' -> 10\n   - 'tạ' -> 100\n   - 'chục cân' -> 10\n   - 'cân', 'ký', 'kg', 'kí' -> quy đổi về dạng số thực (ví dụ '2 cân rưỡi' -> 2.5).\n4. XỬ LÝ TỪ ĐỒNG ÂM / ĐỘ TIN CẬY:\n   - Gán chỉ số confidence từ 0.0 đến 1.0 cho mỗi món. Nếu khớp từ đồng âm chệch âm nhẹ (ví dụ 'Bắc Hướng' -> 'Bắc Hương'), gán confidence = 0.6.\n5. Trả về mảng JSON đúng theo định dạng schema."
 }
 ```
 
 ### Input Payload Context Example
 ```json
 {
-  "transcript": "bán cho chị 1kg ST với 2 cân rưỡi tám thái",
+  "transcript": "bán cho chị 1kg ST, à không lấy 2kg ST với 2 cân rưỡi Bắc Hướng",
   "available_products": [
     {"id": 1, "name": "Gạo ST25", "aliases": ["ST", "ST25"], "unit": "kg"},
     {"id": 2, "name": "Gạo Tám Thái", "aliases": ["tám thái", "tám"], "unit": "kg"},
@@ -136,14 +136,16 @@ Stores individual line items within an invoice.
     {
       "product_id": 1,
       "product_name": "Gạo ST25",
-      "quantity": 1.0,
-      "unit": "kg"
+      "quantity": 2.0,
+      "unit": "kg",
+      "confidence": 0.98
     },
     {
-      "product_id": 2,
-      "product_name": "Gạo Tám Thái",
+      "product_id": 3,
+      "product_name": "Gạo Bắc Hương",
       "quantity": 2.5,
-      "unit": "kg"
+      "unit": "kg",
+      "confidence": 0.65
     }
   ],
   "unmatched_text": []
@@ -152,27 +154,15 @@ Stores individual line items within an invoice.
 
 ---
 
-## 5. Real-World Business & Logic Review
-
-### Business Logic Review
-- **Vietnamese Quantities & Fractional Units**: The AI system prompt specifically handles real-world spoken Vietnamese expressions such as *"rưỡi"* (2.5), *"nửa cân"* (0.5), *"lạng"* (0.1), *"chục"* (10).
-- **Product Shorthand Matching**: Shop owners rarely speak full product names like *"Gạo Sóc Trăng ST25 hạng nhất"*. Adding the `aliases` column enables exact matching for short spoken terms like *"ST"* or *"ST25"*.
-- **Cash & Discount Handling**: Added optional fields for discount (giảm giá), customer paid amount (khách đưa), and cash change calculation (tiền thừa) directly on the draft invoice UI.
-
-### Technical & Offline Error Handling
-- **Offline / Network Loss Fallback**: If internet connection fails during Gemini API call, the app displays a clear toast notification and allows manual product search & line item addition on the draft invoice screen.
-- **API Key Management**: Settings screen allows shop owners to enter their Gemini API Key or use a pre-configured key.
-
----
-
-## 6. Screen Structure & User Interface
+## 5. Screen Structure & User Interface
 
 1. **Home Screen (Voice Billing)**
    - Header with active API & Network connection indicator.
    - Central prominent Microphone button with pulse soundwave visualizer.
    - Live Speech-to-Text transcript display box.
    - **Draft Invoice Modal**:
-     - Line items table: Product Name | Quantity | Unit Price | Subtotal | [Remove Item].
+     - Line items table: Product Name | Quantity (editable) | Unit Price (editable) | Subtotal | [Remove Item].
+     - Low confidence items (`confidence < 0.8`) highlighted in **Yellow warning background** for visual verification.
      - Quick "Add Item Manually" search button.
      - Summary & Payment bar: Total Quantity | Subtotal | Discount | Net Total | Customer Paid | Cash Change.
      - Buttons: "Xác nhận & Lưu", "Hủy".
@@ -194,14 +184,15 @@ Stores individual line items within an invoice.
 
 ---
 
-## 7. Verification & Test Plan
+## 6. Verification & Test Plan
 
 ### Automated Verification
 1. Database Schema migrations & CRUD tests for Products, Aliases, and Invoices.
-2. Unit tests for AI Parsing response handler & edge case inputs (e.g., fractional numbers like "2 cân rưỡi" -> 2.5, "nửa cân" -> 0.5).
+2. Unit tests for AI Parsing response handler & edge case inputs (e.g., mid-sentence corrections "à không", homophone confidence scoring, fractional numbers "2 cân rưỡi" -> 2.5).
 3. Excel generation test to ensure valid `.xlsx` buffer output with accurate formatting.
 
 ### Manual Verification
 1. Test speech input with real-world Vietnamese voice recordings.
-2. Verify exact price calculations, discount subtractions, and cash change calculations.
-3. Test exporting Excel file and opening on mobile devices (Zalo, Files, Google Drive).
+2. Verify yellow highlighting for misheard homophones and prompt updates for corrections.
+3. Verify custom unit price edits on draft invoice screen.
+4. Test exporting Excel file and opening on mobile devices (Zalo, Files, Google Drive).
