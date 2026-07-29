@@ -1,5 +1,41 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
 import { Product, AIParsingResult } from '../types';
+import {
+  generateGeminiJson,
+  GeminiJsonGenerator,
+} from './geminiClient';
+
+const INVOICE_RESPONSE_SCHEMA = {
+  type: 'object',
+  properties: {
+    matched_items: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          product_id: { type: 'integer' },
+          product_name: { type: 'string' },
+          quantity: { type: 'number' },
+          unit: { type: 'string' },
+          confidence: { type: 'number', minimum: 0, maximum: 1 },
+        },
+        required: [
+          'product_id',
+          'product_name',
+          'quantity',
+          'unit',
+          'confidence',
+        ],
+        additionalProperties: false,
+      },
+    },
+    unmatched_text: {
+      type: 'array',
+      items: { type: 'string' },
+    },
+  },
+  required: ['matched_items', 'unmatched_text'],
+  additionalProperties: false,
+} as const;
 
 export const buildGeminiSystemInstruction = (products: Product[]): string => {
   const catalogList = products.map((p) => ({
@@ -31,40 +67,67 @@ QUY TẮC BẮT BUỘC:
 5. Trả về đúng định dạng JSON Schema yêu cầu.`;
 };
 
+type ParsedMatchedItem = AIParsingResult['matched_items'][number];
+
+const isMatchedItem = (value: unknown): value is ParsedMatchedItem => {
+  if (!value || typeof value !== 'object') return false;
+  const item = value as Record<string, unknown>;
+  return (
+    typeof item.product_id === 'number' &&
+    typeof item.product_name === 'string' &&
+    typeof item.quantity === 'number' &&
+    typeof item.unit === 'string' &&
+    typeof item.confidence === 'number' &&
+    item.confidence >= 0 &&
+    item.confidence <= 1
+  );
+};
+
 export const parseAIResponse = (responseText: string): AIParsingResult => {
   try {
-    const jsonStr = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
-    const parsed = JSON.parse(jsonStr);
+    const jsonText = responseText
+      .replace(/```json/g, '')
+      .replace(/```/g, '')
+      .trim();
+    const value: unknown = JSON.parse(jsonText);
+    if (!value || typeof value !== 'object') {
+      throw new Error('invalid object');
+    }
+
+    const parsed = value as Record<string, unknown>;
+    if (
+      !Array.isArray(parsed.matched_items) ||
+      !parsed.matched_items.every(isMatchedItem) ||
+      (parsed.unmatched_text !== undefined &&
+        (!Array.isArray(parsed.unmatched_text) ||
+          !parsed.unmatched_text.every((item) => typeof item === 'string')))
+    ) {
+      throw new Error('invalid schema');
+    }
+
     return {
-      matched_items: parsed.matched_items || [],
-      unmatched_text: parsed.unmatched_text || [],
+      matched_items: parsed.matched_items,
+      unmatched_text: (parsed.unmatched_text as string[] | undefined) ?? [],
     };
-  } catch (error) {
-    console.error('Failed to parse Gemini AI JSON response:', error);
-    return { matched_items: [], unmatched_text: [responseText] };
+  } catch {
+    throw new Error('Gemini trả về dữ liệu không hợp lệ');
   }
 };
 
 export const parseVoiceTranscript = async (
   transcript: string,
   products: Product[],
-  apiKey: string
+  apiKey: string,
+  generate: GeminiJsonGenerator = generateGeminiJson
 ): Promise<AIParsingResult> => {
-  if (!apiKey) {
-    throw new Error('Chưa cài đặt Gemini API Key trong Cài đặt.');
+  if (!apiKey.trim()) {
+    throw new Error('Chưa có Gemini API Key');
   }
 
-  const genAI = new GoogleGenerativeAI(apiKey);
-  const systemInstruction = buildGeminiSystemInstruction(products);
-
-  const model = genAI.getGenerativeModel({
-    model: 'gemini-1.5-flash',
-    systemInstruction,
-    generationConfig: {
-      responseMimeType: 'application/json',
-    },
+  const responseText = await generate(apiKey, {
+    prompt: `Ghi âm giọng nói người dùng: "${transcript}"`,
+    systemInstruction: buildGeminiSystemInstruction(products),
+    responseJsonSchema: INVOICE_RESPONSE_SCHEMA,
   });
-
-  const response = await model.generateContent(`Ghi âm giọng nói người dùng: "${transcript}"`);
-  return parseAIResponse(response.response.text() || '{}');
+  return parseAIResponse(responseText);
 };

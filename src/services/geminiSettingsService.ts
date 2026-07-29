@@ -15,3 +15,5 @@ export const saveGeminiApiKey = async (apiKey: string): Promise<void> => {
 
 export const deleteGeminiApiKey = (): Promise<void> =>
   SecureStore.deleteItemAsync(GEMINI_API_KEY_STORAGE_KEY);
+
+export { validateGeminiApiKey } from './geminiClient';

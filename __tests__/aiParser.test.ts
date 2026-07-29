@@ -1,4 +1,8 @@
-import { buildGeminiSystemInstruction, parseAIResponse } from '../src/services/aiParser';
+import {
+  buildGeminiSystemInstruction,
+  parseAIResponse,
+  parseVoiceTranscript,
+} from '../src/services/aiParser';
 import { Product } from '../src/types';
 
 describe('AI Parser Service', () => {
@@ -26,5 +30,28 @@ describe('AI Parser Service', () => {
     expect(parsed.matched_items.length).toBe(2);
     expect(parsed.matched_items[0].quantity).toBe(1);
     expect(parsed.matched_items[1].confidence).toBe(0.65);
+  });
+
+  it('passes the key and structured request to the Gemini boundary', async () => {
+    const generate = jest.fn().mockResolvedValue(
+      JSON.stringify({ matched_items: [], unmatched_text: [] })
+    );
+
+    await parseVoiceTranscript('1kg ST', sampleProducts, 'test-key', generate);
+
+    expect(generate).toHaveBeenCalledWith(
+      'test-key',
+      expect.objectContaining({
+        systemInstruction: expect.stringContaining('Gạo ST25'),
+        responseJsonSchema: expect.objectContaining({ type: 'object' }),
+      })
+    );
+  });
+
+  it('rejects semantically invalid Gemini output', async () => {
+    const generate = jest.fn().mockResolvedValue('{"matched_items":"wrong"}');
+    await expect(
+      parseVoiceTranscript('1kg ST', sampleProducts, 'test-key', generate)
+    ).rejects.toThrow('Gemini trả về dữ liệu không hợp lệ');
   });
 });
