@@ -1,7 +1,3 @@
-jest.mock('@google/generative-ai', () => ({
-  GoogleGenerativeAI: jest.fn(),
-}), { virtual: true });
-
 import { buildGeminiSystemInstruction, parseAIResponse } from '../src/services/aiParser';
 import { Product } from '../src/types';
 
