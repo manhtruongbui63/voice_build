@@ -32,10 +32,12 @@ export const SettingsScreen: React.FC = () => {
   const [apiKey, setApiKey] = useState('');
   const [hasStoredKey, setHasStoredKey] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [message, setMessage] = useState('');
   const [isError, setIsError] = useState(false);
   const storageStateVersion = useRef(0);
-  const isSavePending = useRef(false);
+  const operationLock = useRef(false);
+  const isOperationPending = isSaving || isDeleting;
 
   useEffect(() => {
     let isMounted = true;
@@ -65,10 +67,10 @@ export const SettingsScreen: React.FC = () => {
   }, []);
 
   const handleSave = async () => {
-    if (isSavePending.current) return;
+    if (operationLock.current) return;
 
     const trimmedKey = apiKey.trim();
-    isSavePending.current = true;
+    operationLock.current = true;
     setIsSaving(true);
     setIsError(false);
     setMessage('');
@@ -84,13 +86,13 @@ export const SettingsScreen: React.FC = () => {
       setIsError(true);
       setMessage(getSafeSaveErrorMessage(error));
     } finally {
-      isSavePending.current = false;
+      operationLock.current = false;
       setIsSaving(false);
     }
   };
 
   const handleDelete = () => {
-    if (isSavePending.current) return;
+    if (operationLock.current) return;
 
     Alert.alert(
       'Xóa API Key',
@@ -101,8 +103,10 @@ export const SettingsScreen: React.FC = () => {
           text: 'Xóa',
           style: 'destructive',
           onPress: async () => {
-            if (isSavePending.current) return;
+            if (operationLock.current) return;
 
+            operationLock.current = true;
+            setIsDeleting(true);
             try {
               await deleteGeminiApiKey();
               storageStateVersion.current += 1;
@@ -113,6 +117,9 @@ export const SettingsScreen: React.FC = () => {
             } catch {
               setIsError(true);
               setMessage('Không thể xóa API Key');
+            } finally {
+              operationLock.current = false;
+              setIsDeleting(false);
             }
           },
         },
@@ -137,9 +144,9 @@ export const SettingsScreen: React.FC = () => {
         style={styles.input}
       />
       <TouchableOpacity
-        disabled={isSaving}
+        disabled={isOperationPending}
         onPress={handleSave}
-        style={[styles.primaryButton, isSaving && styles.disabledButton]}
+        style={[styles.primaryButton, isOperationPending && styles.disabledButton]}
       >
         {isSaving ? (
           <ActivityIndicator color="#FFF" />
@@ -150,9 +157,9 @@ export const SettingsScreen: React.FC = () => {
       {message ? <Text style={isError ? styles.errorText : styles.successText}>{message}</Text> : null}
       {hasStoredKey ? (
         <TouchableOpacity
-          disabled={isSaving}
+          disabled={isOperationPending}
           onPress={handleDelete}
-          style={[styles.deleteButton, isSaving && styles.disabledButton]}
+          style={[styles.deleteButton, isOperationPending && styles.disabledButton]}
         >
           <Text style={styles.deleteText}>Xóa API Key</Text>
         </TouchableOpacity>
