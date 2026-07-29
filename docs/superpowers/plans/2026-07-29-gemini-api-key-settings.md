@@ -251,6 +251,8 @@ git commit -m "feat: store Gemini key in Secure Store"
 **Files:**
 - Create: `src/services/geminiClient.ts`
 - Create: `__tests__/geminiClient.test.ts`
+- Modify: `package.json`
+- Modify: `package-lock.json`
 - Modify: `src/services/geminiSettingsService.ts`
 - Modify: `src/services/aiParser.ts`
 - Modify: `__tests__/aiParser.test.ts`
@@ -566,7 +568,19 @@ export const parseAIResponse = (responseText: string): AIParsingResult => {
 
 The thrown error never includes the raw response text.
 
-- [ ] **Step 7: Run focused tests, typecheck, and the full suite**
+- [ ] **Step 7: Remove the legacy SDK in the same production-migration task**
+
+Run:
+
+```bash
+npm uninstall @google/generative-ai
+rg -n "@google/generative-ai" src package.json
+```
+
+Expected: npm removes the legacy dependency and `rg` returns no production or
+manifest references. `@google/genai` remains installed.
+
+- [ ] **Step 8: Run focused tests, typecheck, and the full suite**
 
 Run:
 
@@ -578,10 +592,10 @@ npm test -- --runInBand
 
 Expected: focused tests pass, TypeScript exits 0, and the full suite remains green.
 
-- [ ] **Step 8: Commit the Gemini SDK migration**
+- [ ] **Step 9: Commit the Gemini SDK migration**
 
 ```bash
-git add src/services/geminiClient.ts src/services/geminiSettingsService.ts src/services/aiParser.ts __tests__/geminiClient.test.ts __tests__/aiParser.test.ts
+git add package.json package-lock.json src/services/geminiClient.ts src/services/geminiSettingsService.ts src/services/aiParser.ts __tests__/geminiClient.test.ts __tests__/aiParser.test.ts
 git commit -m "feat: validate Gemini keys and structured output"
 ```
 
