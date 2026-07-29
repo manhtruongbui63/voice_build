@@ -54,4 +54,57 @@ describe('AI Parser Service', () => {
       parseVoiceTranscript('1kg ST', sampleProducts, 'test-key', generate)
     ).rejects.toThrow('Gemini trả về dữ liệu không hợp lệ');
   });
+
+  it('rejects a matched product ID that is absent from the catalog', async () => {
+    const generate = jest.fn().mockResolvedValue(
+      JSON.stringify({
+        matched_items: [
+          {
+            product_id: 999,
+            product_name: 'Sản phẩm giả',
+            quantity: 1,
+            unit: 'kg',
+            confidence: 0.9,
+          },
+        ],
+        unmatched_text: [],
+      })
+    );
+
+    await expect(
+      parseVoiceTranscript('1kg sản phẩm giả', sampleProducts, 'test-key', generate)
+    ).rejects.toThrow('Gemini trả về dữ liệu không hợp lệ');
+  });
+
+  it('canonicalizes matched product names and units from the catalog', async () => {
+    const generate = jest.fn().mockResolvedValue(
+      JSON.stringify({
+        matched_items: [
+          {
+            product_id: 1,
+            product_name: 'Tên giả',
+            quantity: 2,
+            unit: 'thùng',
+            confidence: 0.9,
+          },
+        ],
+        unmatched_text: [],
+      })
+    );
+
+    await expect(
+      parseVoiceTranscript('2kg ST', sampleProducts, 'test-key', generate)
+    ).resolves.toEqual({
+      matched_items: [
+        {
+          product_id: 1,
+          product_name: 'Gạo ST25',
+          quantity: 2,
+          unit: 'kg',
+          confidence: 0.9,
+        },
+      ],
+      unmatched_text: [],
+    });
+  });
 });

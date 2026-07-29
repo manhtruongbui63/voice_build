@@ -129,5 +129,22 @@ export const parseVoiceTranscript = async (
     systemInstruction: buildGeminiSystemInstruction(products),
     responseJsonSchema: INVOICE_RESPONSE_SCHEMA,
   });
-  return parseAIResponse(responseText);
+  const parsed = parseAIResponse(responseText);
+  const productById = new Map(products.map((product) => [product.id, product]));
+  const matchedItems = parsed.matched_items.map((item) => {
+    const product = productById.get(item.product_id);
+    if (!product) {
+      throw new Error('Gemini trả về dữ liệu không hợp lệ');
+    }
+    return {
+      ...item,
+      product_name: product.name,
+      unit: product.unit,
+    };
+  });
+
+  return {
+    matched_items: matchedItems,
+    unmatched_text: parsed.unmatched_text,
+  };
 };

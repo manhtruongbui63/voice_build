@@ -13,6 +13,28 @@ export type GeminiJsonGenerator = (
   request: GeminiRequest
 ) => Promise<string>;
 
+const hasInvalidApiKeyReason = (message?: string): boolean => {
+  if (!message) return false;
+  try {
+    const body: unknown = JSON.parse(message);
+    if (!body || typeof body !== 'object') return false;
+    const error = (body as Record<string, unknown>).error;
+    if (!error || typeof error !== 'object') return false;
+    const details = (error as Record<string, unknown>).details;
+    return (
+      Array.isArray(details) &&
+      details.some(
+        (detail) =>
+          !!detail &&
+          typeof detail === 'object' &&
+          (detail as Record<string, unknown>).reason === 'API_KEY_INVALID'
+      )
+    );
+  } catch {
+    return false;
+  }
+};
+
 export const mapGeminiError = (error: unknown): Error => {
   const candidate = error as {
     status?: number;
@@ -21,6 +43,13 @@ export const mapGeminiError = (error: unknown): Error => {
   };
 
   if (candidate.status === 401 || candidate.status === 403) {
+    return new Error('API Key không hợp lệ hoặc đã bị thu hồi');
+  }
+  if (
+    candidate.name === 'ApiError' &&
+    candidate.status === 400 &&
+    hasInvalidApiKeyReason(candidate.message)
+  ) {
     return new Error('API Key không hợp lệ hoặc đã bị thu hồi');
   }
   if (candidate.status === 429) {
