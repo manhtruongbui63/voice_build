@@ -1,3 +1,7 @@
+jest.mock('@google/generative-ai', () => ({
+  GoogleGenerativeAI: jest.fn(),
+}), { virtual: true });
+
 import { buildGeminiSystemInstruction, parseAIResponse } from '../src/services/aiParser';
 import { Product } from '../src/types';
 
@@ -10,7 +14,8 @@ describe('AI Parser Service', () => {
   it('generates system instruction with catalog products', () => {
     const instruction = buildGeminiSystemInstruction(sampleProducts);
     expect(instruction).toContain('Gạo ST25');
-    expect(instruction).toContain('ST, ST25');
+    expect(instruction).toContain('"ST"');
+    expect(instruction).toContain('"ST25"');
   });
 
   it('parses valid AI JSON response correctly', () => {

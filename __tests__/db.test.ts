@@ -1,3 +1,7 @@
+jest.mock('expo-sqlite', () => ({
+  openDatabaseSync: jest.fn(),
+}));
+
 import { calculateInvoiceTotals } from '../src/services/db';
 
 describe('Invoice Calculation Helper', () => {

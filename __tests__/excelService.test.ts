@@ -1,3 +1,6 @@
+jest.mock('expo-file-system', () => ({}));
+jest.mock('expo-sharing', () => ({}));
+
 import { formatInvoiceRowsForExcel } from '../src/services/excelService';
 import { Invoice } from '../src/types';
 
