@@ -23,11 +23,15 @@ describe('HomeScreen Gemini configuration', () => {
   });
 
   afterEach(() => {
+    act(() => {
+      jest.runOnlyPendingTimers();
+    });
     jest.useRealTimers();
     jest.restoreAllMocks();
   });
 
   it('does not start parsing without a stored key and can open Settings', async () => {
+    jest.useFakeTimers();
     mockedGetKey.mockResolvedValue(null);
     const onOpenSettings = jest.fn();
     jest.spyOn(Alert, 'alert').mockImplementation((_title, _message, buttons) => {
@@ -40,6 +44,9 @@ describe('HomeScreen Gemini configuration', () => {
     fireEvent.press(getByTestId('voice-microphone-button'));
 
     await waitFor(() => expect(onOpenSettings).toHaveBeenCalledTimes(1));
+    act(() => {
+      jest.advanceTimersByTime(2500);
+    });
     expect(mockedParse).not.toHaveBeenCalled();
   });
 
@@ -106,5 +113,84 @@ describe('HomeScreen Gemini configuration', () => {
       expect.anything(),
       expect.stringContaining('SENTINEL_SECRET')
     );
+  });
+
+  it('coalesces rapid presses while the stored-key read is pending', async () => {
+    jest.useFakeTimers();
+    let resolveKey: ((value: string | null) => void) | undefined;
+    const pendingKey = new Promise<string | null>((resolve) => {
+      resolveKey = resolve;
+    });
+    mockedGetKey.mockImplementation(() => pendingKey);
+    mockedParse.mockResolvedValue({ matched_items: [], unmatched_text: [] });
+
+    const { getByTestId } = render(
+      <HomeScreen onOpenSettings={jest.fn()} />
+    );
+    const microphoneButton = getByTestId('voice-microphone-button');
+
+    fireEvent.press(microphoneButton);
+    fireEvent.press(microphoneButton);
+
+    expect(mockedGetKey).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      resolveKey?.('stored-test-key');
+    });
+    await act(async () => {
+      jest.advanceTimersByTime(2500);
+    });
+
+    await waitFor(() => expect(mockedParse).toHaveBeenCalledTimes(1));
+  });
+
+  it('cancels the recording timer when Home unmounts', async () => {
+    jest.useFakeTimers();
+    mockedGetKey.mockResolvedValue('stored-test-key');
+    mockedParse.mockResolvedValue({ matched_items: [], unmatched_text: [] });
+    const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+
+    const { getByTestId, unmount } = render(
+      <HomeScreen onOpenSettings={jest.fn()} />
+    );
+
+    await act(async () => {
+      fireEvent.press(getByTestId('voice-microphone-button'));
+    });
+    unmount();
+    act(() => {
+      jest.advanceTimersByTime(2500);
+    });
+
+    expect(mockedParse).not.toHaveBeenCalled();
+    expect(alertSpy).not.toHaveBeenCalled();
+  });
+
+  it('does nothing when the stored-key read resolves after Home unmounts', async () => {
+    jest.useFakeTimers();
+    let resolveKey: ((value: string | null) => void) | undefined;
+    mockedGetKey.mockImplementation(
+      () =>
+        new Promise<string | null>((resolve) => {
+          resolveKey = resolve;
+        })
+    );
+    const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+
+    const { getByTestId, unmount } = render(
+      <HomeScreen onOpenSettings={jest.fn()} />
+    );
+
+    fireEvent.press(getByTestId('voice-microphone-button'));
+    unmount();
+    await act(async () => {
+      resolveKey?.('stored-test-key');
+    });
+    act(() => {
+      jest.advanceTimersByTime(2500);
+    });
+
+    expect(mockedParse).not.toHaveBeenCalled();
+    expect(alertSpy).not.toHaveBeenCalled();
   });
 });

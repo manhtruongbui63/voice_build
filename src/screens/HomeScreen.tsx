@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator, Alert } from 'react-native';
 import { getProductsFromDB } from '../services/db';
 import { parseVoiceTranscript } from '../services/aiParser';
@@ -30,17 +30,36 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onOpenSettings }) => {
   const [transcript, setTranscript] = useState('');
   const [matchedItems, setMatchedItems] = useState<MatchedItem[]>([]);
   const [draftVisible, setDraftVisible] = useState(false);
+  const isMountedRef = useRef(true);
+  const microphonePendingRef = useRef(false);
+  const recordingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    isMountedRef.current = true;
+
+    return () => {
+      isMountedRef.current = false;
+      microphonePendingRef.current = false;
+      if (recordingTimerRef.current) {
+        clearTimeout(recordingTimerRef.current);
+        recordingTimerRef.current = null;
+      }
+    };
+  }, []);
 
   const handleSimulatedVoiceTest = async (
     testVoiceString: string,
     apiKey: string
   ) => {
+    if (!isMountedRef.current) return;
+
     setTranscript(testVoiceString);
     setLoading(true);
 
     try {
       const products = getProductsFromDB();
       const result = await parseVoiceTranscript(testVoiceString, products, apiKey);
+      if (!isMountedRef.current) return;
 
       const mappedItems: MatchedItem[] = result.matched_items.map((item) => {
         const prod = products.find((p) => p.id === item.product_id);
@@ -59,20 +78,26 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onOpenSettings }) => {
       setMatchedItems(mappedItems);
       setDraftVisible(true);
     } catch (err: unknown) {
-      Alert.alert(
-        'Lỗi phân tích AI',
-        getSafeParserErrorMessage(err)
-      );
+      if (isMountedRef.current) {
+        Alert.alert(
+          'Lỗi phân tích AI',
+          getSafeParserErrorMessage(err)
+        );
+      }
     } finally {
-      setLoading(false);
+      if (isMountedRef.current) setLoading(false);
     }
   };
 
   const handleMicrophonePress = async () => {
-    if (isRecording || loading) return;
+    if (microphonePendingRef.current || isRecording || loading) return;
 
+    microphonePendingRef.current = true;
+    let recordingScheduled = false;
     try {
       const apiKey = await getGeminiApiKey();
+      if (!isMountedRef.current) return;
+
       if (!apiKey) {
         Alert.alert(
           'Chưa có Gemini API Key',
@@ -86,18 +111,33 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onOpenSettings }) => {
       }
 
       setIsRecording(true);
-      setTimeout(() => {
+      recordingTimerRef.current = setTimeout(() => {
+        recordingTimerRef.current = null;
+        if (!isMountedRef.current) {
+          microphonePendingRef.current = false;
+          return;
+        }
+
         setIsRecording(false);
         void handleSimulatedVoiceTest(
           'bán cho chị 1kg ST, à không lấy 2kg ST với 2 cân rưỡi Bắc Hướng',
           apiKey
-        );
+        ).finally(() => {
+          microphonePendingRef.current = false;
+        });
       }, 2500);
+      recordingScheduled = true;
     } catch {
-      Alert.alert(
-        'Không thể đọc API Key',
-        'Hãy mở Cài đặt và lưu lại Gemini API Key.'
-      );
+      if (isMountedRef.current) {
+        Alert.alert(
+          'Không thể đọc API Key',
+          'Hãy mở Cài đặt và lưu lại Gemini API Key.'
+        );
+      }
+    } finally {
+      if (!recordingScheduled) {
+        microphonePendingRef.current = false;
+      }
     }
   };
 
