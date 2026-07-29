@@ -15,6 +15,19 @@ import {
   validateGeminiApiKey,
 } from '../services/geminiSettingsService';
 
+const SAFE_VALIDATION_MESSAGES = new Set<string>([
+  'Vui lòng nhập Gemini API Key',
+  'API Key không hợp lệ hoặc đã bị thu hồi',
+  'Gemini đang giới hạn lượt sử dụng',
+  'Không thể kết nối Gemini',
+  'Không thể xử lý yêu cầu Gemini',
+]);
+
+const getSafeSaveErrorMessage = (error: unknown): string =>
+  error instanceof Error && SAFE_VALIDATION_MESSAGES.has(error.message)
+    ? error.message
+    : 'Không thể kiểm tra hoặc lưu API Key';
+
 export const SettingsScreen: React.FC = () => {
   const [apiKey, setApiKey] = useState('');
   const [hasStoredKey, setHasStoredKey] = useState(false);
@@ -22,6 +35,7 @@ export const SettingsScreen: React.FC = () => {
   const [message, setMessage] = useState('');
   const [isError, setIsError] = useState(false);
   const storageStateVersion = useRef(0);
+  const isSavePending = useRef(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -51,7 +65,10 @@ export const SettingsScreen: React.FC = () => {
   }, []);
 
   const handleSave = async () => {
+    if (isSavePending.current) return;
+
     const trimmedKey = apiKey.trim();
+    isSavePending.current = true;
     setIsSaving(true);
     setIsError(false);
     setMessage('');
@@ -65,13 +82,16 @@ export const SettingsScreen: React.FC = () => {
       setMessage('Đã kết nối');
     } catch (error) {
       setIsError(true);
-      setMessage(error instanceof Error ? error.message : 'Không thể xử lý yêu cầu Gemini');
+      setMessage(getSafeSaveErrorMessage(error));
     } finally {
+      isSavePending.current = false;
       setIsSaving(false);
     }
   };
 
   const handleDelete = () => {
+    if (isSavePending.current) return;
+
     Alert.alert(
       'Xóa API Key',
       'VoiceBill sẽ không thể phân tích hóa đơn bằng AI cho đến khi bạn thêm key mới.',
@@ -81,6 +101,8 @@ export const SettingsScreen: React.FC = () => {
           text: 'Xóa',
           style: 'destructive',
           onPress: async () => {
+            if (isSavePending.current) return;
+
             try {
               await deleteGeminiApiKey();
               storageStateVersion.current += 1;
@@ -88,9 +110,9 @@ export const SettingsScreen: React.FC = () => {
               setHasStoredKey(false);
               setIsError(false);
               setMessage('Đã xóa API Key');
-            } catch (error) {
+            } catch {
               setIsError(true);
-              setMessage(error instanceof Error ? error.message : 'Không thể xử lý yêu cầu Gemini');
+              setMessage('Không thể xóa API Key');
             }
           },
         },
@@ -127,7 +149,11 @@ export const SettingsScreen: React.FC = () => {
       </TouchableOpacity>
       {message ? <Text style={isError ? styles.errorText : styles.successText}>{message}</Text> : null}
       {hasStoredKey ? (
-        <TouchableOpacity onPress={handleDelete} style={styles.deleteButton}>
+        <TouchableOpacity
+          disabled={isSaving}
+          onPress={handleDelete}
+          style={[styles.deleteButton, isSaving && styles.disabledButton]}
+        >
           <Text style={styles.deleteText}>Xóa API Key</Text>
         </TouchableOpacity>
       ) : null}

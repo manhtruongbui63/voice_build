@@ -39,12 +39,23 @@ describe('SettingsScreen', () => {
   });
 
   it('validates before saving the trimmed key', async () => {
+    let resolveValidation: (() => void) | undefined;
+    mockedValidate.mockImplementation(
+      () =>
+        new Promise<void>((resolve) => {
+          resolveValidation = resolve;
+        })
+    );
     const { getByTestId, getByText } = render(<SettingsScreen />);
 
     fireEvent.changeText(getByTestId('gemini-api-key-input'), '  test-key  ');
     fireEvent.press(getByText('Kiểm tra & Lưu'));
 
     await waitFor(() => expect(mockedValidate).toHaveBeenCalledWith('test-key'));
+    expect(mockedSave).not.toHaveBeenCalled();
+    await act(async () => {
+      resolveValidation?.();
+    });
     await waitFor(() => expect(mockedSave).toHaveBeenCalledWith('test-key'));
     expect(getByText('Đã kết nối')).toBeTruthy();
   });
@@ -74,6 +85,79 @@ describe('SettingsScreen', () => {
 
     await waitFor(() => expect(mockedDelete).toHaveBeenCalled());
     expect(getByText('Đã xóa API Key')).toBeTruthy();
+  });
+
+  it('does not allow deletion while saving is pending', async () => {
+    mockedGet.mockResolvedValue('stored-key');
+    let resolveSave: (() => void) | undefined;
+    mockedSave.mockImplementation(
+      () =>
+        new Promise<void>((resolve) => {
+          resolveSave = resolve;
+        })
+    );
+    let confirmPreviouslyOpenedDelete: (() => void) | undefined;
+    const alertSpy = jest
+      .spyOn(Alert, 'alert')
+      .mockImplementation((_title, _message, buttons) => {
+        const destructiveButton = buttons?.find((button) => button.text === 'Xóa');
+        confirmPreviouslyOpenedDelete = () => destructiveButton?.onPress?.();
+      });
+    const { getByTestId, getByText } = render(<SettingsScreen />);
+
+    await waitFor(() => expect(getByText('Xóa API Key')).toBeTruthy());
+    fireEvent.press(getByText('Xóa API Key'));
+    expect(alertSpy).toHaveBeenCalledTimes(1);
+
+    fireEvent.changeText(getByTestId('gemini-api-key-input'), 'replacement-test-key');
+    fireEvent.press(getByText('Kiểm tra & Lưu'));
+    await waitFor(() =>
+      expect(mockedSave).toHaveBeenCalledWith('replacement-test-key')
+    );
+
+    fireEvent.press(getByText('Xóa API Key'));
+    expect(alertSpy).toHaveBeenCalledTimes(1);
+    await act(async () => {
+      confirmPreviouslyOpenedDelete?.();
+    });
+    expect(mockedDelete).not.toHaveBeenCalled();
+
+    await act(async () => {
+      resolveSave?.();
+    });
+    await waitFor(() => expect(getByText('Đã kết nối')).toBeTruthy());
+  });
+
+  it('does not display an arbitrary validation error', async () => {
+    const sentinel = 'SENTINEL_SECRET_VALIDATION_MUST_NOT_RENDER';
+    mockedValidate.mockRejectedValue(new Error(sentinel));
+    const { getByTestId, getByText, queryByText } = render(<SettingsScreen />);
+
+    fireEvent.changeText(getByTestId('gemini-api-key-input'), 'invalid-test-key');
+    fireEvent.press(getByText('Kiểm tra & Lưu'));
+
+    await waitFor(() =>
+      expect(getByText('Không thể kiểm tra hoặc lưu API Key')).toBeTruthy()
+    );
+    expect(queryByText(sentinel)).toBeNull();
+    expect(mockedSave).not.toHaveBeenCalled();
+  });
+
+  it('does not display an arbitrary deletion error', async () => {
+    const sentinel = 'SENTINEL_SECRET_DELETE_MUST_NOT_RENDER';
+    mockedGet.mockResolvedValue('stored-key');
+    mockedDelete.mockRejectedValue(new Error(sentinel));
+    jest.spyOn(Alert, 'alert').mockImplementation((_title, _message, buttons) => {
+      buttons?.find((button) => button.text === 'Xóa')?.onPress?.();
+    });
+    const { getByText, queryByText } = render(<SettingsScreen />);
+
+    await waitFor(() => expect(getByText('Xóa API Key')).toBeTruthy());
+    fireEvent.press(getByText('Xóa API Key'));
+
+    await waitFor(() => expect(getByText('Không thể xóa API Key')).toBeTruthy());
+    expect(queryByText(sentinel)).toBeNull();
+    expect(getByText('Xóa API Key')).toBeTruthy();
   });
 
   it('shows a safe error when loading the stored key fails', async () => {
