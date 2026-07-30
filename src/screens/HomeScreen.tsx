@@ -4,6 +4,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { getProductsFromDB } from '../services/db';
 import { parseVoiceTranscript } from '../services/aiParser';
 import { getGeminiApiKey } from '../services/geminiSettingsService';
+import { correctTranscript } from '../services/transcriptCorrection';
 import { MatchedItem, PaymentMethod } from '../types';
 import { DraftInvoiceModal } from '../components/DraftInvoiceModal';
 import { useVoiceInvoiceRecognition, VoiceRecognitionErrorCode } from '../hooks/useVoiceInvoiceRecognition';
@@ -56,22 +57,22 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onOpenSettings }) => {
     };
   }, []);
 
-  const handleFinalTranscript = useCallback(async (finalText: string) => {
+  const handleFinalTranscript = useCallback(async (alternatives: string[]) => {
     if (!isMountedRef.current) return;
-    
-    const trimmedText = finalText.trim();
+
+    const best = (alternatives[0] ?? '').trim();
     const apiKey = apiKeyRef.current;
     apiKeyRef.current = null;
 
-    if (!trimmedText || !apiKey || parserPendingRef.current) return;
+    if (!best || !apiKey || parserPendingRef.current) return;
 
-    setTranscript(trimmedText);
+    const products = getProductsFromDB();
+    setTranscript(correctTranscript(best, products));
     setLoading(true);
     parserPendingRef.current = true;
 
     try {
-      const products = getProductsFromDB();
-      const result = await parseVoiceTranscript(trimmedText, products, apiKey);
+      const result = await parseVoiceTranscript(alternatives, products, apiKey);
       if (!isMountedRef.current) return;
 
       const mappedItems: MatchedItem[] = result.matched_items.map((item) => {
