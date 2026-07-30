@@ -2,6 +2,7 @@ import {
   buildGeminiSystemInstruction,
   parseAIResponse,
   parseVoiceTranscript,
+  shortlistProducts,
 } from '../src/services/aiParser';
 import { Product } from '../src/types';
 import { getDefaultPaymentMethod } from '../src/services/geminiSettingsService';
@@ -119,5 +120,20 @@ describe('AI Parser Service', () => {
     expect(instruction).toContain('VÍ DỤ MẪU (FEW-SHOT EXAMPLES):');
     expect(instruction).toContain('cho 2 cân gạo ST');
     expect(instruction).toContain('lấy 1 túi Bắc Hương, à thôi lấy 2 túi đi');
+  });
+
+  it('returns the full catalog when it is small', () => {
+    const list = shortlistProducts(['gạo st'], sampleProducts, 30);
+    expect(list).toHaveLength(sampleProducts.length);
+  });
+
+  it('filters to matching candidates for a large catalog', () => {
+    const big: Product[] = Array.from({ length: 40 }, (_, i) => ({
+      id: i + 1, name: `SP ${i}`, aliases: '', unit: 'cái', unit_price: 1000,
+    }));
+    big.push({ id: 999, name: 'Gạo ST25', aliases: 'ST', unit: 'kg', unit_price: 33000 });
+    const list = shortlistProducts(['2 cân gạo st'], big, 30);
+    expect(list.some((p) => p.id === 999)).toBe(true);
+    expect(list.length).toBeLessThan(big.length);
   });
 });

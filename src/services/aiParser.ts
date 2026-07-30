@@ -4,6 +4,23 @@ import {
   GeminiJsonGenerator,
 } from './geminiClient';
 import { getDefaultPaymentMethod } from './geminiSettingsService';
+import { normalizeVietnamese } from './transcriptCorrection';
+
+export const shortlistProducts = (
+  alternatives: string[],
+  products: Product[],
+  limit = 30
+): Product[] => {
+  if (products.length <= limit) return products;
+  const haystack = normalizeVietnamese(alternatives.join(' '));
+  const scored = products.filter((p) => {
+    const keys = [p.name, ...(p.aliases ? p.aliases.split(',') : [])]
+      .map((k) => normalizeVietnamese(k))
+      .filter(Boolean);
+    return keys.some((k) => k.length > 1 && haystack.includes(k));
+  });
+  return scored.length > 0 ? scored.slice(0, limit) : products;
+};
 
 const INVOICE_RESPONSE_SCHEMA = {
   type: 'object',
