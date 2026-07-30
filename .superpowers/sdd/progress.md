@@ -23,3 +23,11 @@
 | Task 7: localInvoiceParser | Complete | `35ac242` | review clean; fixture fixed (brief inconsistent); LIMITATION: bare-alias mid-phrase (e.g. "gạo ST") not fast-matched, falls back to Gemini |
 | Task 8: shared Toast (success/warning/error) | Complete | `e8d2bec`, `36ad68d` | DraftInvoiceModal reuses Toast; shadowColor → `colors.neutral900` token |
 | Task 9: HomeScreen fast-path + no-match Warning toast | Complete | `d01d05d` | localFastParse preferred before Gemini; empty matches → Warning toast, no draft; shared `finalizeResult` mapping |
+
+## Product-Delete Crash Fix + Multi-Select (plan 2026-07-30) — baseline a72d683
+| Task | Status | Commits | Notes |
+|---|---|---|---|
+| Task 1: migrate invoice_items.product_id SET NULL + nullable type | Complete | `461726b` | review clean; Minor: no regression test for PRAGMA-outside-transaction ordering |
+| Task 2: deleteProductsFromDB batch delete | Complete | `f48e6b6` | review clean; Minor: no single-id test (optional) |
+| Task 3: single-delete try/catch safety net | Complete | `c7dde9f` | review clean; Minor: silent catch (brief-mandated), unused mock var (used in Task 4) |
+| Task 4: multi-select checkbox delete UI | Complete | `976b42c` | review clean; Minor: unused avatar style, silent catch (matches existing pattern) |
