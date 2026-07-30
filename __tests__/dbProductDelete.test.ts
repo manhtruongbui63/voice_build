@@ -1,6 +1,6 @@
 jest.mock('expo-sqlite', () => ({ openDatabaseSync: jest.fn() }));
 import * as SQLite from 'expo-sqlite';
-import { migrateInvoiceItemsProductFk } from '../src/services/db';
+import { migrateInvoiceItemsProductFk, deleteProductsFromDB } from '../src/services/db';
 
 const fakeDb = {
   execSync: jest.fn(),
@@ -29,5 +29,22 @@ describe('migrateInvoiceItemsProductFk', () => {
     fakeDb.getAllSync.mockReturnValue([{ table: 'products', on_delete: 'SET NULL' }]);
     migrateInvoiceItemsProductFk(fakeDb as unknown as SQLite.SQLiteDatabase);
     expect(fakeDb.execSync).not.toHaveBeenCalled();
+  });
+});
+
+describe('deleteProductsFromDB', () => {
+  it('does nothing for an empty id list', () => {
+    deleteProductsFromDB([]);
+    expect(fakeDb.withTransactionSync).not.toHaveBeenCalled();
+    expect(fakeDb.runSync).not.toHaveBeenCalled();
+  });
+
+  it('deletes selected ids in a transaction using an IN clause', () => {
+    deleteProductsFromDB([1, 2, 3]);
+    expect(fakeDb.withTransactionSync).toHaveBeenCalledTimes(1);
+    expect(fakeDb.runSync).toHaveBeenCalledWith(
+      'DELETE FROM products WHERE id IN (?, ?, ?)',
+      [1, 2, 3]
+    );
   });
 });

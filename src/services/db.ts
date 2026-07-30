@@ -144,6 +144,15 @@ export const deleteProductFromDB = (id: number) => {
   database.runSync('DELETE FROM products WHERE id = ?', [id]);
 };
 
+export const deleteProductsFromDB = (ids: number[]) => {
+  if (ids.length === 0) return;
+  const database = getDB();
+  const placeholders = ids.map(() => '?').join(', ');
+  database.withTransactionSync(() => {
+    database.runSync(`DELETE FROM products WHERE id IN (${placeholders})`, ids);
+  });
+};
+
 export const saveInvoiceToDB = (invoice: Invoice): number => {
   const database = getDB();
   const totals = calculateInvoiceTotals(invoice.items, invoice.discount_amount, invoice.paid_amount);
