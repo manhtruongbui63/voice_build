@@ -25,8 +25,11 @@ Mic → STT (maxAlternatives=3) → transcript final + N alternatives
      → [Bước sửa hiển thị] fuzzy-correct bản final theo catalog (accent-insensitive)
      → HomeScreen.handleFinalTranscript(alternatives)
          → localFastParse(alternatives, products)
-             ├─ confident? → dựng draft NGAY (không mạng)
-             └─ không chắc → parseVoiceTranscript(Gemini: shortlist + thinkingBudget=0, truyền alternatives)
+             ├─ confident? → result (fast-path, không mạng)
+             └─ không chắc → parseVoiceTranscript(Gemini: shortlist + thinkingBudget=0, truyền alternatives) → result
+     → phân nhánh theo result:
+         ├─ matched_items.length ≥ 1 → mở draft (toast success trong draft)
+         └─ matched_items.length === 0 → KHÔNG mở draft; toast Warning trên màn giọng nói; ở lại/quay về màn nhập giọng nói
 ```
 
 ## Thành phần
@@ -56,9 +59,23 @@ Mic → STT (maxAlternatives=3) → transcript final + N alternatives
   - `parseVoiceTranscript` nhận `alternatives: string[]`; prompt gộp các phương án đọc để Gemini tự chọn phương án khớp catalog nhất.
 
 ### 5. Ghép luồng — `src/screens/HomeScreen.tsx`
-- `handleFinalTranscript(alternatives)`: gọi `localFastParse` trước; nếu có kết quả → set `matchedItems`, mở draft ngay (không set `loading`). Nếu `null` → set `loading`, gọi `parseVoiceTranscript(alternatives, ...)`.
+- `handleFinalTranscript(alternatives)`: gọi `localFastParse` trước; nếu có kết quả → dùng luôn (không set `loading`). Nếu `null` → set `loading`, gọi `parseVoiceTranscript(alternatives, ...)`.
+- Sau khi có `result` (từ fast-path hoặc Gemini), **phân nhánh theo số sản phẩm** (xem Phần 6):
+  - `matched_items.length ≥ 1` → set `matchedItems`, mở draft như hiện tại.
+  - `matched_items.length === 0` → **không** mở draft; hiện toast Warning; ở lại màn nhập giọng nói.
 - Chỉ hiển thị trạng thái "Đang xử lý…" khi thực sự gọi Gemini.
 - `visibleTranscript` final chạy qua `correctTranscript`.
+
+### 6. Không tìm thấy sản phẩm → toast Warning + ở lại màn giọng nói
+**Vấn đề hiện tại:** `handleFinalTranscript` mở `DraftInvoiceModal` kể cả khi `matched_items` rỗng, nên vẫn thấy toast "success" trong draft.
+
+**Thiết kế:**
+- Tách toast trong `DraftInvoiceModal` thành **component dùng chung** `src/components/Toast.tsx` với `variant: 'success' | 'warning' | 'error'` (màu: success=emerald-soft, warning=`warningSurface`/`warningAmber`, error=`errorContainer`/`errorCrimson`), giữ hành vi **trượt vào từ phải + tự đóng sau 3s** (đã có trong draft). `DraftInvoiceModal` tái dùng component này cho ca success.
+- `HomeScreen` giữ state toast (variant + message). Khi `matched_items.length === 0`:
+  - Không mở draft, đưa recognition về `idle` (đã ở màn giọng nói).
+  - Hiện toast **Warning**: `"Không nhận diện được sản phẩm nào. Vui lòng nói lại."` (⚠️ icon).
+- Áp dụng cho **cả** fast-path (nếu vì lý do nào đó trả 0 item) lẫn Gemini.
+- **Lỗi thật** (Gemini/mạng, `catch`) tiếp tục dùng cơ chế hiện có (`Alert` với `getSafeParserErrorMessage`); tùy chọn sau này có thể chuyển sang toast **Error** để đồng nhất — ghi nhận, không bắt buộc trong phase này.
 
 ## Xử lý lỗi & edge cases
 - **Gemini timeout/mạng lỗi:** nếu fast-path đã đủ chắc, không cần Gemini. Nếu phải gọi Gemini mà lỗi → giữ nguyên thông báo lỗi hiện có (`getSafeParserErrorMessage`).
@@ -73,6 +90,8 @@ Mic → STT (maxAlternatives=3) → transcript final + N alternatives
 - `geminiClient`: `generateContent` được gọi kèm `thinkingConfig.thinkingBudget === 0`.
 - `useVoiceInvoiceRecognition`: `start` truyền `maxAlternatives: 3`; event `result` isFinal gom nhiều phương án và gọi `onFinalTranscript` với mảng.
 - Cập nhật các test hiện có của HomeScreen/hook cho chữ ký callback mới.
+- **HomeScreen — không tìm thấy sản phẩm:** khi parse trả `matched_items` rỗng → **không** mở `DraftInvoiceModal`, hiện toast Warning, trạng thái về idle. Khi có ≥1 item → mở draft (giữ nguyên).
+- `Toast`: render đúng theo `variant` (success/warning/error); tự đóng sau 3s; đóng thủ công.
 
 ## Tiêu chí thành công (đo được)
 - Đơn đơn giản (1–2 SP, không đính chính): draft hiện **< 300ms**, không cần mạng.
@@ -82,7 +101,7 @@ Mic → STT (maxAlternatives=3) → transcript final + N alternatives
 ## Kế hoạch theo phase (cho bước writing-plans)
 1. **Phase 1 — STT:** maxAlternatives=3, callback trả mảng, `transcriptCorrection`, wiring HomeScreen + tests.
 2. **Phase 2 — Gemini:** `thinkingBudget=0`, `shortlistProducts`, prompt nhận alternatives + tests.
-3. **Phase 3 — Fast-path:** `localInvoiceParser` + cổng an toàn + ghép luồng ưu tiên fast-path + tests.
+3. **Phase 3 — Fast-path + xử lý không tìm thấy:** `localInvoiceParser` + cổng an toàn + ghép luồng ưu tiên fast-path; component `Toast` dùng chung + nhánh `matched_items` rỗng → toast Warning, không mở draft; `DraftInvoiceModal` tái dùng `Toast` + tests.
 
 ## Ngoài phạm vi (YAGNI)
 - Streaming JSON, context caching tường minh, chế độ STT on-device bắt buộc, offline hoàn toàn không mạng.
