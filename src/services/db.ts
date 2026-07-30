@@ -10,6 +10,44 @@ export const getDB = () => {
   return db;
 };
 
+const isInvoiceItemsProductFkNullable = (
+  database: SQLite.SQLiteDatabase
+): boolean => {
+  const fks = database.getAllSync<{ table: string; on_delete: string }>(
+    'PRAGMA foreign_key_list(invoice_items)'
+  );
+  return fks.some((fk) => fk.table === 'products' && fk.on_delete === 'SET NULL');
+};
+
+export const migrateInvoiceItemsProductFk = (
+  database: SQLite.SQLiteDatabase
+): void => {
+  if (isInvoiceItemsProductFkNullable(database)) return;
+
+  database.execSync('PRAGMA foreign_keys = OFF;');
+  database.execSync(`
+    BEGIN;
+    CREATE TABLE invoice_items_new (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      invoice_id INTEGER NOT NULL,
+      product_id INTEGER,
+      product_name TEXT NOT NULL,
+      quantity REAL NOT NULL,
+      unit TEXT NOT NULL,
+      unit_price REAL NOT NULL,
+      amount REAL NOT NULL,
+      FOREIGN KEY (invoice_id) REFERENCES invoices (id) ON DELETE CASCADE,
+      FOREIGN KEY (product_id) REFERENCES products (id) ON DELETE SET NULL
+    );
+    INSERT INTO invoice_items_new (id, invoice_id, product_id, product_name, quantity, unit, unit_price, amount)
+      SELECT id, invoice_id, product_id, product_name, quantity, unit, unit_price, amount FROM invoice_items;
+    DROP TABLE invoice_items;
+    ALTER TABLE invoice_items_new RENAME TO invoice_items;
+    COMMIT;
+  `);
+  database.execSync('PRAGMA foreign_keys = ON;');
+};
+
 export const initDB = async () => {
   const database = getDB();
   database.execSync(`
@@ -56,6 +94,8 @@ export const initDB = async () => {
   } catch (e) {
     // Ignore error if column already exists
   }
+
+  migrateInvoiceItemsProductFk(database);
 };
 
 export const calculateInvoiceTotals = (
