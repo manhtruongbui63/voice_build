@@ -93,7 +93,7 @@ describe('geminiClient', () => {
 
     expect(mockedGoogleGenAI).toHaveBeenCalledWith({ apiKey: 'test-key' });
     expect(generateContent).toHaveBeenCalledWith({
-      model: 'gemini-3.5-flash-lite',
+      model: 'gemini-2.5-flash-lite',
       contents: 'Return JSON',
       config: {
         systemInstruction: 'Use JSON only',
