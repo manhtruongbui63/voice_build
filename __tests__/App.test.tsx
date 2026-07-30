@@ -2,6 +2,10 @@ import React from 'react';
 import { fireEvent, render } from '@testing-library/react-native';
 import App from '../App';
 
+jest.mock('expo-font', () => ({
+  ...jest.requireActual('expo-font'),
+  useFonts: () => [true],
+}));
 jest.mock('../src/services/db', () => ({
   initDB: jest.fn(),
 }));
@@ -34,7 +38,7 @@ describe('App Settings navigation', () => {
   it('opens Settings from the Settings tab', () => {
     const { getByText } = render(<App />);
 
-    fireEvent.press(getByText('Cài đặt'));
+    fireEvent.press(getByText('Cài Đặt'));
 
     expect(getByText('Cài đặt Gemini')).toBeTruthy();
   });

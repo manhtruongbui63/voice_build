@@ -94,7 +94,10 @@ VÍ DỤ MẪU (FEW-SHOT EXAMPLES):
   JSON: {"matched_items": [{"product_id": 1, "product_name": "Gạo ST25", "quantity": 2, "unit": "kg", "confidence": 0.9}], "unmatched_text": []}
 
 - Giọng nói: "lấy 1 túi Bắc Hương thanh toán tiền mặt"
-  JSON: {"matched_items": [{"product_id": 2, "product_name": "Bắc Hương", "quantity": 1, "unit": "túi", "confidence": 0.95}], "payment_method": "tiền mặt", "unmatched_text": []}`;
+  JSON: {"matched_items": [{"product_id": 2, "product_name": "Bắc Hương", "quantity": 1, "unit": "túi", "confidence": 0.95}], "payment_method": "tiền mặt", "unmatched_text": []}
+
+- Giọng nói (có đính chính): "lấy 1 túi Bắc Hương, à thôi lấy 2 túi đi"
+  JSON: {"matched_items": [{"product_id": 2, "product_name": "Bắc Hương", "quantity": 2, "unit": "túi", "confidence": 0.9}], "unmatched_text": []}`;
 };
 
 type ParsedMatchedItem = AIParsingResult['matched_items'][number];
