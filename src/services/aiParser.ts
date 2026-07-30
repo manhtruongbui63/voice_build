@@ -146,7 +146,7 @@ export const parseAIResponse = (responseText: string): AIParsingResult => {
 };
 
 export const parseVoiceTranscript = async (
-  transcript: string,
+  alternatives: string[],
   products: Product[],
   apiKey: string,
   generate: GeminiJsonGenerator = generateGeminiJson
@@ -155,9 +155,19 @@ export const parseVoiceTranscript = async (
     throw new Error('Chưa có Gemini API Key');
   }
 
+  const best = (alternatives[0] ?? '').trim();
+  const others = alternatives.slice(1).filter(Boolean);
+  const catalog = shortlistProducts(alternatives, products);
+
+  const altBlock = others.length
+    ? `\nCác cách nghe khác (chọn phương án khớp danh mục nhất): ${others
+        .map((a) => `"${a}"`)
+        .join(', ')}`
+    : '';
+
   const responseText = await generate(apiKey, {
-    prompt: `Ghi âm giọng nói người dùng: "${transcript}"`,
-    systemInstruction: buildGeminiSystemInstruction(products),
+    prompt: `Ghi âm giọng nói người dùng: "${best}"${altBlock}`,
+    systemInstruction: buildGeminiSystemInstruction(catalog),
     responseJsonSchema: INVOICE_RESPONSE_SCHEMA,
   });
   const parsed = parseAIResponse(responseText);

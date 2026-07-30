@@ -43,7 +43,7 @@ describe('AI Parser Service', () => {
       JSON.stringify({ matched_items: [], unmatched_text: [] })
     );
 
-    await parseVoiceTranscript('1kg ST', sampleProducts, 'test-key', generate);
+    await parseVoiceTranscript(['1kg ST'], sampleProducts, 'test-key', generate);
 
     expect(generate).toHaveBeenCalledWith(
       'test-key',
@@ -54,10 +54,21 @@ describe('AI Parser Service', () => {
     );
   });
 
+  it('accepts multiple alternatives and includes them in the prompt', async () => {
+    const generate = jest.fn().mockResolvedValue(
+      JSON.stringify({ matched_items: [], unmatched_text: [] })
+    );
+    await parseVoiceTranscript(['gạo st', 'gạo sờ tê'], sampleProducts, 'k', generate);
+    expect(generate).toHaveBeenCalledWith(
+      'k',
+      expect.objectContaining({ prompt: expect.stringContaining('gạo sờ tê') })
+    );
+  });
+
   it('rejects semantically invalid Gemini output', async () => {
     const generate = jest.fn().mockResolvedValue('{"matched_items":"wrong"}');
     await expect(
-      parseVoiceTranscript('1kg ST', sampleProducts, 'test-key', generate)
+      parseVoiceTranscript(['1kg ST'], sampleProducts, 'test-key', generate)
     ).rejects.toThrow('Gemini trả về dữ liệu không hợp lệ');
   });
 
@@ -78,7 +89,7 @@ describe('AI Parser Service', () => {
     );
 
     await expect(
-      parseVoiceTranscript('1kg sản phẩm giả', sampleProducts, 'test-key', generate)
+      parseVoiceTranscript(['1kg sản phẩm giả'], sampleProducts, 'test-key', generate)
     ).rejects.toThrow('Gemini trả về dữ liệu không hợp lệ');
   });
 
@@ -99,7 +110,7 @@ describe('AI Parser Service', () => {
     );
 
     await expect(
-      parseVoiceTranscript('2kg ST', sampleProducts, 'test-key', generate)
+      parseVoiceTranscript(['2kg ST'], sampleProducts, 'test-key', generate)
     ).resolves.toEqual({
       matched_items: [
         {
