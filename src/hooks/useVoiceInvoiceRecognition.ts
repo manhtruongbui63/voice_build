@@ -24,7 +24,7 @@ export interface VoiceInvoiceRecognition {
 }
 
 interface VoiceInvoiceRecognitionOptions {
-  onFinalTranscript: (transcript: string) => void;
+  onFinalTranscript: (alternatives: string[]) => void;
   onError: (code: VoiceRecognitionErrorCode) => void;
   contextualStrings?: string[];
 }
@@ -149,7 +149,8 @@ export const useVoiceInvoiceRecognition = ({
         lang: 'vi-VN',
         interimResults: true,
         continuous: false,
-        maxAlternatives: 1,
+        maxAlternatives: 3,
+        addsPunctuation: false,
         ...(contextualStrings && { contextualStrings }),
       });
     } catch {
@@ -207,20 +208,24 @@ export const useVoiceInvoiceRecognition = ({
 
   useEffect(() => {
     const subResult = ExpoSpeechRecognitionModule.addListener('result', (event) => {
-      const transcript = event.results[0]?.transcript.trim() ?? '';
+      const best = event.results[0]?.transcript.trim() ?? '';
       if (
         !mountedRef.current ||
         !activeRef.current ||
         finalDeliveredRef.current ||
-        !transcript
+        !best
       ) {
         return;
       }
 
       if (!event.isFinal) {
-        setInterimTranscript(transcript);
+        setInterimTranscript(best);
         return;
       }
+
+      const alternatives = event.results
+        .map((r: { transcript: string }) => r.transcript.trim())
+        .filter((t: string) => t.length > 0);
 
       finalDeliveredRef.current = true;
       activeRef.current = false;
@@ -228,7 +233,7 @@ export const useVoiceInvoiceRecognition = ({
       sessionIdRef.current += 1;
       setInterimTranscript('');
       updateStatus('idle');
-      onFinalTranscriptRef.current(transcript);
+      onFinalTranscriptRef.current(alternatives.length > 0 ? alternatives : [best]);
     });
 
     const subError = ExpoSpeechRecognitionModule.addListener('error', (event) => {

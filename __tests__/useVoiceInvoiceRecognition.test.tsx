@@ -14,12 +14,13 @@ jest.mock('expo-speech-recognition', () => {
       start: jest.fn(),
       stop: jest.fn(),
       abort: jest.fn(),
+      addListener: jest.fn(
+        (eventName: string, listener: (event: unknown) => void) => {
+          listeners[eventName] = listener;
+          return { remove: jest.fn() };
+        }
+      ),
     },
-    useSpeechRecognitionEvent: jest.fn(
-      (eventName: string, listener: (event: unknown) => void) => {
-        listeners[eventName] = listener;
-      }
-    ),
     __mockSpeechListeners: listeners,
   };
 });
@@ -48,6 +49,12 @@ describe('useVoiceInvoiceRecognition', () => {
     speechModule.start.mockReset();
     speechModule.stop.mockReset();
     speechModule.abort.mockReset();
+    speechModule.addListener.mockImplementation(
+      (eventName: string, listener: (event: unknown) => void) => {
+        listeners[eventName] = listener;
+        return { remove: jest.fn() };
+      }
+    );
     speechModule.requestPermissionsAsync.mockResolvedValue({
       granted: true,
       status: PermissionStatus.GRANTED,
@@ -71,9 +78,44 @@ describe('useVoiceInvoiceRecognition', () => {
       lang: 'vi-VN',
       interimResults: true,
       continuous: false,
-      maxAlternatives: 1,
+      maxAlternatives: 3,
+      addsPunctuation: false,
     });
     expect(result.current.status).toBe('listening');
+  });
+
+  it('passes maxAlternatives to the native start call', async () => {
+    speechModule.requestPermissionsAsync.mockResolvedValue({ granted: true } as never);
+    const onFinalTranscript = jest.fn();
+    const onError = jest.fn();
+    const { result } = renderHook(() =>
+      useVoiceInvoiceRecognition({ onFinalTranscript, onError })
+    );
+    await act(async () => {
+      await result.current.start();
+    });
+    expect(speechModule.start).toHaveBeenCalledWith(
+      expect.objectContaining({ maxAlternatives: 3 })
+    );
+  });
+
+  it('delivers all final alternatives to onFinalTranscript', async () => {
+    speechModule.requestPermissionsAsync.mockResolvedValue({ granted: true } as never);
+    const onFinalTranscript = jest.fn();
+    const onError = jest.fn();
+    const { result } = renderHook(() =>
+      useVoiceInvoiceRecognition({ onFinalTranscript, onError })
+    );
+    await act(async () => {
+      await result.current.start();
+    });
+    act(() => {
+      listeners.result?.({
+        isFinal: true,
+        results: [{ transcript: 'gạo st' }, { transcript: 'gạo sờ tê' }],
+      });
+    });
+    expect(onFinalTranscript).toHaveBeenCalledWith(['gạo st', 'gạo sờ tê']);
   });
 
   it('does not start a second session while permission is pending', async () => {
@@ -205,7 +247,7 @@ describe('useVoiceInvoiceRecognition', () => {
       ({
         finalCallback,
       }: {
-        finalCallback: (transcript: string) => void;
+        finalCallback: (alternatives: string[]) => void;
       }) =>
         useVoiceInvoiceRecognition({
           onFinalTranscript: finalCallback,
@@ -224,7 +266,7 @@ describe('useVoiceInvoiceRecognition', () => {
     });
 
     expect(initialCallback).not.toHaveBeenCalled();
-    expect(latestCallback).toHaveBeenCalledWith('ba ký gạo');
+    expect(latestCallback).toHaveBeenCalledWith(['ba ký gạo']);
   });
 
   it('delivers an error to the latest callback', async () => {
@@ -282,7 +324,7 @@ describe('useVoiceInvoiceRecognition', () => {
     });
 
     expect(onFinalTranscript).toHaveBeenCalledTimes(1);
-    expect(onFinalTranscript).toHaveBeenCalledWith('bán hai ký gạo ST');
+    expect(onFinalTranscript).toHaveBeenCalledWith(['bán hai ký gạo ST']);
     expect(result.current.interimTranscript).toBe('');
     expect(result.current.status).toBe('idle');
   });
@@ -579,8 +621,10 @@ describe('useVoiceInvoiceRecognition', () => {
     });
 
     expect(onFinalTranscript).toHaveBeenCalledTimes(1);
-    expect(onFinalTranscript).toHaveBeenCalledWith('một ký gạo');
+    expect(onFinalTranscript).toHaveBeenCalledWith(['một ký gạo']);
     expect(onError).not.toHaveBeenCalled();
+  });
+
   it('passes contextualStrings to the native module start method', async () => {
     const { result } = renderHook(() =>
       useVoiceInvoiceRecognition({
