@@ -77,6 +77,7 @@ export const generateGeminiJson: GeminiJsonGenerator = async (
         systemInstruction: request.systemInstruction,
         responseMimeType: 'application/json',
         responseJsonSchema: request.responseJsonSchema,
+        thinkingConfig: { thinkingBudget: 0 },
       },
     });
     if (!response.text) {

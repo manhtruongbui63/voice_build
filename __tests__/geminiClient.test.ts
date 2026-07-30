@@ -99,8 +99,27 @@ describe('geminiClient', () => {
         systemInstruction: 'Use JSON only',
         responseMimeType: 'application/json',
         responseJsonSchema,
+        thinkingConfig: { thinkingBudget: 0 },
       },
     });
+  });
+
+  it('disables thinking to reduce latency', async () => {
+    const generateContent = jest.fn().mockResolvedValue({ text: '{"ok":true}' });
+    mockedGoogleGenAI.mockImplementation(
+      () => ({ models: { generateContent } } as unknown as GoogleGenAI)
+    );
+
+    await generateGeminiJson('key', {
+      prompt: 'x',
+      responseJsonSchema: { type: 'object' },
+    });
+
+    expect(generateContent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        config: expect.objectContaining({ thinkingConfig: { thinkingBudget: 0 } }),
+      })
+    );
   });
 
   it('validates a key with a minimal JSON request', async () => {
