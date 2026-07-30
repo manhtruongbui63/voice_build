@@ -469,6 +469,51 @@ describe('useVoiceInvoiceRecognition', () => {
     expect(onError).not.toHaveBeenCalled();
   });
 
+  it('waits for an aborted native session to end before starting a replacement', async () => {
+    const onFinalTranscript = jest.fn();
+    const onError = jest.fn();
+    const { result } = renderHook(() =>
+      useVoiceInvoiceRecognition({ onFinalTranscript, onError })
+    );
+    await act(async () => result.current.start());
+
+    let replacementStart!: Promise<void>;
+    act(() => {
+      result.current.abort();
+      replacementStart = result.current.start();
+    });
+
+    expect(speechModule.requestPermissionsAsync).toHaveBeenCalledTimes(1);
+    expect(speechModule.start).toHaveBeenCalledTimes(1);
+    act(() => {
+      listeners.result?.({
+        isFinal: true,
+        results: [
+          { transcript: 'late old text', confidence: 1, segments: [] },
+        ],
+      });
+      listeners.error?.({
+        error: 'aborted',
+        message: 'SENTINEL_NATIVE_SECRET',
+      });
+    });
+
+    expect(onFinalTranscript).not.toHaveBeenCalled();
+    expect(onError).not.toHaveBeenCalled();
+    expect(speechModule.start).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      listeners.end?.(null);
+      await replacementStart;
+    });
+
+    expect(speechModule.requestPermissionsAsync).toHaveBeenCalledTimes(2);
+    expect(speechModule.start).toHaveBeenCalledTimes(2);
+    expect(result.current.status).toBe('listening');
+    expect(onFinalTranscript).not.toHaveBeenCalled();
+    expect(onError).not.toHaveBeenCalled();
+  });
+
   it('reports only the first terminal event when error arrives before end', async () => {
     const onError = jest.fn<void, [VoiceRecognitionErrorCode]>();
     const { result } = renderHook(() =>

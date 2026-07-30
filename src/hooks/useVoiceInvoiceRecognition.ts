@@ -54,7 +54,11 @@ export const useVoiceInvoiceRecognition = ({
   const mountedRef = useRef(true);
   const sessionIdRef = useRef(0);
   const activeRef = useRef(false);
+  const nativeSessionRef = useRef(false);
   const startPendingRef = useRef(false);
+  const awaitingAbortEndRef = useRef(false);
+  const queuedStartPromiseRef = useRef<Promise<void> | null>(null);
+  const queuedStartResolveRef = useRef<(() => void) | null>(null);
   const finalDeliveredRef = useRef(false);
   const statusRef = useRef<VoiceRecognitionStatus>('idle');
   const onFinalTranscriptRef = useRef(onFinalTranscript);
@@ -73,11 +77,28 @@ export const useVoiceInvoiceRecognition = ({
   const invalidateSession = useCallback(() => {
     sessionIdRef.current += 1;
     activeRef.current = false;
+    nativeSessionRef.current = false;
     startPendingRef.current = false;
     finalDeliveredRef.current = true;
   }, []);
 
+  const takeQueuedStartResolve = useCallback(() => {
+    const resolve = queuedStartResolveRef.current;
+    queuedStartPromiseRef.current = null;
+    queuedStartResolveRef.current = null;
+    return resolve;
+  }, []);
+
   const start = useCallback(async () => {
+    if (awaitingAbortEndRef.current) {
+      if (!queuedStartPromiseRef.current) {
+        queuedStartPromiseRef.current = new Promise<void>((resolve) => {
+          queuedStartResolveRef.current = resolve;
+        });
+      }
+      return queuedStartPromiseRef.current;
+    }
+
     if (activeRef.current || startPendingRef.current) return;
 
     const sessionId = sessionIdRef.current + 1;
@@ -122,7 +143,6 @@ export const useVoiceInvoiceRecognition = ({
       return;
     }
 
-    activeRef.current = true;
     try {
       ExpoSpeechRecognitionModule.start({
         lang: 'vi-VN',
@@ -134,7 +154,7 @@ export const useVoiceInvoiceRecognition = ({
       if (
         !mountedRef.current ||
         sessionIdRef.current !== sessionId ||
-        !activeRef.current
+        !startPendingRef.current
       ) {
         return;
       }
@@ -148,11 +168,13 @@ export const useVoiceInvoiceRecognition = ({
     if (
       !mountedRef.current ||
       sessionIdRef.current !== sessionId ||
-      !activeRef.current
+      !startPendingRef.current
     ) {
       return;
     }
 
+    activeRef.current = true;
+    nativeSessionRef.current = true;
     startPendingRef.current = false;
     updateStatus('listening');
   }, [invalidateSession, updateStatus]);
@@ -165,15 +187,21 @@ export const useVoiceInvoiceRecognition = ({
   }, [updateStatus]);
 
   const abort = useCallback(() => {
-    const shouldAbort = activeRef.current || startPendingRef.current;
+    const shouldAbort = nativeSessionRef.current || startPendingRef.current;
+    const shouldWaitForEnd = nativeSessionRef.current;
+    takeQueuedStartResolve()?.();
     invalidateSession();
     setInterimTranscript('');
     updateStatus('idle');
 
+    if (shouldWaitForEnd) {
+      awaitingAbortEndRef.current = true;
+    }
+
     if (shouldAbort) {
       ExpoSpeechRecognitionModule.abort();
     }
-  }, [invalidateSession, updateStatus]);
+  }, [invalidateSession, takeQueuedStartResolve, updateStatus]);
 
   useSpeechRecognitionEvent('result', (event) => {
     const transcript = event.results[0]?.transcript.trim() ?? '';
@@ -210,6 +238,15 @@ export const useVoiceInvoiceRecognition = ({
   });
 
   useSpeechRecognitionEvent('end', () => {
+    if (awaitingAbortEndRef.current) {
+      awaitingAbortEndRef.current = false;
+      const resumeQueuedStart = takeQueuedStartResolve();
+      if (resumeQueuedStart) {
+        void start().then(resumeQueuedStart);
+      }
+      return;
+    }
+
     if (!mountedRef.current || !activeRef.current) return;
 
     invalidateSession();
@@ -224,13 +261,14 @@ export const useVoiceInvoiceRecognition = ({
     return () => {
       const shouldAbort = activeRef.current || startPendingRef.current;
       mountedRef.current = false;
+      takeQueuedStartResolve()?.();
       invalidateSession();
 
       if (shouldAbort) {
         ExpoSpeechRecognitionModule.abort();
       }
     };
-  }, [invalidateSession]);
+  }, [invalidateSession, takeQueuedStartResolve]);
 
   return {
     status,
