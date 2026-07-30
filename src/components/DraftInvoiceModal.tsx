@@ -1,9 +1,10 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, Modal, ScrollView, TextInput, TouchableOpacity, StyleSheet, Alert, Animated, Easing } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, Modal, ScrollView, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { MatchedItem, Invoice, PaymentMethod } from '../types';
 import { saveInvoiceToDB, calculateInvoiceTotals } from '../services/db';
 import { colors, typography, fontFamily } from '../theme/tokens';
+import { Toast } from './Toast';
 
 interface Props {
   visible: boolean;
@@ -38,48 +39,10 @@ export const DraftInvoiceModal: React.FC<Props> = ({
     setInvoiceCode(`VOICE-${String(Date.now()).slice(-4)}`);
   }, [initialItems, initialPaymentMethod, visible]);
 
-  // Toast "đã xử lý": trượt vào từ phải, tự đóng sau 3s
-  const toastAnim = useRef(new Animated.Value(0)).current;
-  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const closeToast = () => {
-    if (toastTimer.current) {
-      clearTimeout(toastTimer.current);
-      toastTimer.current = null;
-    }
-    Animated.timing(toastAnim, { toValue: 0, duration: 250, easing: Easing.in(Easing.ease), useNativeDriver: true }).start(
-      () => setBannerVisible(false)
-    );
-  };
-
   useEffect(() => {
     if (!visible) return;
     setBannerVisible(true);
-    toastAnim.setValue(0);
-    Animated.timing(toastAnim, { toValue: 1, duration: 350, easing: Easing.out(Easing.ease), useNativeDriver: true }).start();
-    toastTimer.current = setTimeout(() => {
-      Animated.timing(toastAnim, { toValue: 0, duration: 300, easing: Easing.in(Easing.ease), useNativeDriver: true }).start(
-        () => setBannerVisible(false)
-      );
-    }, 3000);
-    return () => {
-      if (toastTimer.current) {
-        clearTimeout(toastTimer.current);
-        toastTimer.current = null;
-      }
-    };
-  }, [visible, toastAnim]);
-
-  // Hiệu ứng ping trên banner "đã xử lý"
-  const ping = useRef(new Animated.Value(0)).current;
-  useEffect(() => {
-    if (!visible || !bannerVisible) return;
-    const loop = Animated.loop(
-      Animated.timing(ping, { toValue: 1, duration: 1500, easing: Easing.out(Easing.ease), useNativeDriver: true })
-    );
-    loop.start();
-    return () => loop.stop();
-  }, [visible, bannerVisible, ping]);
+  }, [visible]);
 
   const handleQtyDelta = (index: number, delta: number) => {
     const updated = [...items];
@@ -226,40 +189,13 @@ export const DraftInvoiceModal: React.FC<Props> = ({
         </ScrollView>
 
         {/* Toast "đã xử lý" — trượt vào từ phải, tự đóng sau 3s */}
-        {bannerVisible ? (
-          <Animated.View
-            style={[
-              styles.toast,
-              {
-                opacity: toastAnim,
-                transform: [{ translateX: toastAnim.interpolate({ inputRange: [0, 1], outputRange: [420, 0] }) }],
-              },
-            ]}
-          >
-            <View style={styles.bannerLeft}>
-              <View style={styles.checkWrap}>
-                <Animated.View
-                  pointerEvents="none"
-                  style={[
-                    styles.ping,
-                    {
-                      opacity: ping.interpolate({ inputRange: [0, 1], outputRange: [0.25, 0] }),
-                      transform: [{ scale: ping.interpolate({ inputRange: [0, 1], outputRange: [1, 2] }) }],
-                    },
-                  ]}
-                />
-                <MaterialIcons name="check-circle" size={20} color={colors.primary} />
-              </View>
-              <View>
-                <Text style={styles.bannerTitle}>Giọng nói đã được xử lý</Text>
-                <Text style={styles.bannerSubtitle}>Tìm thấy {items.length} sản phẩm trong yêu cầu</Text>
-              </View>
-            </View>
-            <TouchableOpacity onPress={closeToast}>
-              <MaterialIcons name="close" size={20} color={colors.onPrimaryContainer} />
-            </TouchableOpacity>
-          </Animated.View>
-        ) : null}
+        <Toast
+          visible={bannerVisible}
+          variant="success"
+          title="Giọng nói đã được xử lý"
+          subtitle={`Tìm thấy ${items.length} sản phẩm trong yêu cầu`}
+          onClose={() => setBannerVisible(false)}
+        />
 
         {/* Action button */}
         <View style={styles.actionBar}>
@@ -296,33 +232,6 @@ const styles = StyleSheet.create({
   headerCode: { ...typography.headlineMd, color: colors.white },
   // Scroll
   scroll: { paddingBottom: 24 },
-  // Toast
-  toast: {
-    position: 'absolute',
-    top: 118,
-    left: 16,
-    right: 16,
-    zIndex: 100,
-    backgroundColor: colors.primarySoft,
-    borderWidth: 1,
-    borderColor: colors.primaryContainerBorder,
-    borderRadius: 12,
-    padding: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.12,
-    shadowRadius: 16,
-    elevation: 10,
-  },
-  bannerLeft: { flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1 },
-  checkWrap: { width: 24, height: 24, alignItems: 'center', justifyContent: 'center' },
-  ping: { position: 'absolute', width: 24, height: 24, borderRadius: 12, backgroundColor: colors.mint },
-  bannerTitle: { ...typography.labelMd, color: colors.onPrimaryContainer },
-  bannerSubtitle: { ...typography.bodySm, color: colors.onPrimaryContainer, opacity: 0.8 },
   // Card
   card: {
     marginHorizontal: 16,
