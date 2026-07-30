@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ExpoSpeechRecognitionModule,
-  useSpeechRecognitionEvent,
 } from 'expo-speech-recognition';
 
 export type VoiceRecognitionStatus =
@@ -27,6 +26,7 @@ export interface VoiceInvoiceRecognition {
 interface VoiceInvoiceRecognitionOptions {
   onFinalTranscript: (transcript: string) => void;
   onError: (code: VoiceRecognitionErrorCode) => void;
+  contextualStrings?: string[];
 }
 
 const mapRecognitionError = (
@@ -48,6 +48,7 @@ const mapRecognitionError = (
 export const useVoiceInvoiceRecognition = ({
   onFinalTranscript,
   onError,
+  contextualStrings,
 }: VoiceInvoiceRecognitionOptions): VoiceInvoiceRecognition => {
   const [status, setStatus] = useState<VoiceRecognitionStatus>('idle');
   const [interimTranscript, setInterimTranscript] = useState('');
@@ -149,6 +150,7 @@ export const useVoiceInvoiceRecognition = ({
         interimResults: true,
         continuous: false,
         maxAlternatives: 1,
+        ...(contextualStrings && { contextualStrings }),
       });
     } catch {
       if (
@@ -203,57 +205,65 @@ export const useVoiceInvoiceRecognition = ({
     }
   }, [invalidateSession, takeQueuedStartResolve, updateStatus]);
 
-  useSpeechRecognitionEvent('result', (event) => {
-    const transcript = event.results[0]?.transcript.trim() ?? '';
-    if (
-      !mountedRef.current ||
-      !activeRef.current ||
-      finalDeliveredRef.current ||
-      !transcript
-    ) {
-      return;
-    }
-
-    if (!event.isFinal) {
-      setInterimTranscript(transcript);
-      return;
-    }
-
-    finalDeliveredRef.current = true;
-    activeRef.current = false;
-    startPendingRef.current = false;
-    sessionIdRef.current += 1;
-    setInterimTranscript('');
-    updateStatus('idle');
-    onFinalTranscriptRef.current(transcript);
-  });
-
-  useSpeechRecognitionEvent('error', (event) => {
-    if (!mountedRef.current || !activeRef.current) return;
-
-    invalidateSession();
-    setInterimTranscript('');
-    updateStatus('idle');
-    onErrorRef.current(mapRecognitionError(event.error));
-  });
-
-  useSpeechRecognitionEvent('end', () => {
-    if (awaitingAbortEndRef.current) {
-      awaitingAbortEndRef.current = false;
-      const resumeQueuedStart = takeQueuedStartResolve();
-      if (resumeQueuedStart) {
-        void start().then(resumeQueuedStart);
+  useEffect(() => {
+    const subResult = ExpoSpeechRecognitionModule.addListener('result', (event) => {
+      const transcript = event.results[0]?.transcript.trim() ?? '';
+      if (
+        !mountedRef.current ||
+        !activeRef.current ||
+        finalDeliveredRef.current ||
+        !transcript
+      ) {
+        return;
       }
-      return;
-    }
 
-    if (!mountedRef.current || !activeRef.current) return;
+      if (!event.isFinal) {
+        setInterimTranscript(transcript);
+        return;
+      }
 
-    invalidateSession();
-    setInterimTranscript('');
-    updateStatus('idle');
-    onErrorRef.current('no-speech');
-  });
+      finalDeliveredRef.current = true;
+      activeRef.current = false;
+      startPendingRef.current = false;
+      sessionIdRef.current += 1;
+      setInterimTranscript('');
+      updateStatus('idle');
+      onFinalTranscriptRef.current(transcript);
+    });
+
+    const subError = ExpoSpeechRecognitionModule.addListener('error', (event) => {
+      if (!mountedRef.current || !activeRef.current) return;
+
+      invalidateSession();
+      setInterimTranscript('');
+      updateStatus('idle');
+      onErrorRef.current(mapRecognitionError(event.error));
+    });
+
+    const subEnd = ExpoSpeechRecognitionModule.addListener('end', () => {
+      if (awaitingAbortEndRef.current) {
+        awaitingAbortEndRef.current = false;
+        const resumeQueuedStart = takeQueuedStartResolve();
+        if (resumeQueuedStart) {
+          void start().then(resumeQueuedStart);
+        }
+        return;
+      }
+
+      if (!mountedRef.current || !activeRef.current) return;
+
+      invalidateSession();
+      setInterimTranscript('');
+      updateStatus('idle');
+      onErrorRef.current('no-speech');
+    });
+
+    return () => {
+      subResult.remove();
+      subError.remove();
+      subEnd.remove();
+    };
+  }, [start, invalidateSession, takeQueuedStartResolve, updateStatus]);
 
   useEffect(() => {
     mountedRef.current = true;

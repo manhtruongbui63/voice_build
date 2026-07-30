@@ -3,6 +3,7 @@ import { View, Text, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator }
 import { Invoice } from '../types';
 import { getInvoicesFromDB } from '../services/db';
 import { generateExcelReport } from '../services/excelService';
+import { colors } from '../theme/tokens';
 
 export const InvoiceHistoryScreen: React.FC = () => {
   const [range, setRange] = useState<'today' | 'week' | 'month' | 'all'>('today');
@@ -53,7 +54,7 @@ export const InvoiceHistoryScreen: React.FC = () => {
           <Text style={styles.statValue}>{totalKg} kg</Text>
         </View>
         <TouchableOpacity style={styles.excelBtn} onPress={handleExportExcel} disabled={exporting}>
-          {exporting ? <ActivityIndicator color="#FFF" /> : <Text style={styles.excelBtnText}>📊 Xuất Excel</Text>}
+          {exporting ? <ActivityIndicator color={colors.white} /> : <Text style={styles.excelBtnText}>📊 Xuất Excel</Text>}
         </TouchableOpacity>
       </View>
 
@@ -81,22 +82,22 @@ export const InvoiceHistoryScreen: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F9FAFB', padding: 16 },
-  tabFilter: { flexDirection: 'row', backgroundColor: '#E5E7EB', borderRadius: 8, padding: 2, marginBottom: 12 },
+  container: { flex: 1, backgroundColor: colors.neutral50, padding: 16 },
+  tabFilter: { flexDirection: 'row', backgroundColor: colors.neutral200, borderRadius: 8, padding: 2, marginBottom: 12 },
   tab: { flex: 1, paddingVertical: 8, alignItems: 'center', borderRadius: 6 },
-  activeTab: { backgroundColor: '#FFF' },
-  tabText: { fontSize: 13, color: '#4B5563', fontWeight: '600' },
-  activeTabText: { color: '#10B981' },
-  statsCard: { backgroundColor: '#10B981', padding: 16, borderRadius: 12, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
-  statLabel: { color: '#D1FAE5', fontSize: 12 },
-  statValue: { color: '#FFF', fontSize: 18, fontWeight: 'bold' },
-  excelBtn: { backgroundColor: '#047857', paddingVertical: 8, paddingHorizontal: 12, borderRadius: 6 },
-  excelBtnText: { color: '#FFF', fontWeight: 'bold', fontSize: 13 },
-  invoiceCard: { backgroundColor: '#FFF', padding: 14, borderRadius: 10, marginBottom: 10, elevation: 1 },
+  activeTab: { backgroundColor: colors.white },
+  tabText: { fontSize: 13, color: colors.neutral600, fontWeight: '600' },
+  activeTabText: { color: colors.primary },
+  statsCard: { backgroundColor: colors.primaryContainer, padding: 16, borderRadius: 12, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
+  statLabel: { color: colors.primarySoft, fontSize: 12 },
+  statValue: { color: colors.white, fontSize: 18, fontWeight: 'bold' },
+  excelBtn: { backgroundColor: colors.primary, paddingVertical: 8, paddingHorizontal: 12, borderRadius: 6 },
+  excelBtnText: { color: colors.white, fontWeight: 'bold', fontSize: 13 },
+  invoiceCard: { backgroundColor: colors.white, padding: 14, borderRadius: 10, marginBottom: 10, elevation: 1 },
   invHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 },
-  invCode: { fontWeight: 'bold', fontSize: 15, color: '#111827' },
-  invDate: { fontSize: 12, color: '#9CA3AF' },
-  custText: { fontSize: 13, color: '#4B5563', marginBottom: 6 },
-  itemRow: { fontSize: 13, color: '#374151', marginVertical: 1 },
-  totalText: { fontSize: 15, fontWeight: 'bold', color: '#059669', textAlign: 'right', marginTop: 6 },
+  invCode: { fontWeight: 'bold', fontSize: 15, color: colors.neutral900 },
+  invDate: { fontSize: 12, color: colors.neutral400 },
+  custText: { fontSize: 13, color: colors.neutral600, marginBottom: 6 },
+  itemRow: { fontSize: 13, color: colors.neutral700, marginVertical: 1 },
+  totalText: { fontSize: 15, fontWeight: 'bold', color: colors.primaryActive, textAlign: 'right', marginTop: 6 },
 });

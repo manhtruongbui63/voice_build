@@ -4,6 +4,11 @@ import {
   parseVoiceTranscript,
 } from '../src/services/aiParser';
 import { Product } from '../src/types';
+import { getDefaultPaymentMethod } from '../src/services/geminiSettingsService';
+
+jest.mock('../src/services/geminiSettingsService', () => ({
+  getDefaultPaymentMethod: jest.fn().mockResolvedValue('chuyển khoản'),
+}));
 
 describe('AI Parser Service', () => {
   const sampleProducts: Product[] = [
@@ -104,7 +109,15 @@ describe('AI Parser Service', () => {
           confidence: 0.9,
         },
       ],
+      payment_method: 'chuyển khoản',
       unmatched_text: [],
     });
+  });
+
+  it('includes few-shot examples in the system instruction', () => {
+    const instruction = buildGeminiSystemInstruction([]);
+    expect(instruction).toContain('VÍ DỤ MẪU (FEW-SHOT EXAMPLES):');
+    expect(instruction).toContain('cho 2 cân gạo ST');
+    expect(instruction).toContain('lấy 1 túi Bắc Hương, à thôi lấy 2 túi đi');
   });
 });

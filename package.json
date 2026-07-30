@@ -13,6 +13,8 @@
     "preset": "jest-expo"
   },
   "dependencies": {
+    "@expo-google-fonts/inter": "^0.4.2",
+    "@expo-google-fonts/plus-jakarta-sans": "^0.4.2",
     "@google/genai": "^2.13.0",
     "expo": "~51.0.0",
     "expo-file-system": "~17.0.1",

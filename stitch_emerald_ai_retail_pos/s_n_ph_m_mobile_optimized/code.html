@@ -1,0 +1,151 @@
+<html lang="vi"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/><link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { "colors": { "warning-surface": "#FEF3C7", "tertiary-container": "#7f9fff", "secondary-fixed-dim": "#bec6e0", "on-secondary-container": "#5c647a", "on-primary-fixed": "#002113", "outline-variant": "#bbcabf", "cool-gray-muted": "#64748B", "on-background": "#161d19", "tertiary": "#0053db", "on-surface-variant": "#3c4a42", "on-secondary-fixed-variant": "#3f465c", "warning-amber": "#F59E0B", "primary-fixed-dim": "#4edea3", "on-secondary-fixed": "#131b2e", "primary-fixed": "#6ffbbe", "error-crimson": "#EF4444", "on-error-container": "#93000a", "inverse-primary": "#4edea3", "on-primary-container": "#00422b", "on-error": "#ffffff", "error-container": "#ffdad6", "background": "#f4fbf4", "primary-container": "#10b981", "surface-container-lowest": "#ffffff", "on-tertiary": "#ffffff", "surface-container": "#e8f0e9", "on-tertiary-fixed": "#00174b", "on-primary-fixed-variant": "#005236", "surface-tint": "#006c49", "primary": "#006c49", "surface-container-low": "#eef6ee", "mint": "#34D399", "on-secondary": "#ffffff", "emerald-active": "#059669", "secondary": "#565e74", "on-tertiary-fixed-variant": "#003ea8", "outline": "#6c7a71", "surface-bright": "#f4fbf4", "surface": "#f4fbf4", "error": "#ba1a1a", "surface-dim": "#d4dcd5", "inverse-surface": "#2b322d", "on-primary": "#ffffff", "on-tertiary-container": "#00328b", "surface-container-high": "#e3eae3", "secondary-container": "#dae2fd", "surface-variant": "#dde4dd", "inverse-on-surface": "#ebf3eb", "tertiary-fixed": "#dbe1ff", "secondary-fixed": "#dae2fd", "on-surface": "#161d19", "surface-container-highest": "#dde4dd", "emerald-soft": "#D1FAE5", "tertiary-fixed-dim": "#b4c5ff", "slate-bg": "#F8FAFC" }, "borderRadius": { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" }, "spacing": { "margin-mobile": "1rem", "stack-sm": "0.5rem", "stack-md": "1rem", "stack-lg": "1.5rem", "margin-tablet": "2rem", "gutter": "1rem" }, "fontFamily": { "headline-lg": ["Plus Jakarta Sans"], "headline-md": ["Plus Jakarta Sans"], "headline-lg-mobile": ["Plus Jakarta Sans"], "body-lg": ["Inter"], "label-sm": ["Inter"], "body-md": ["Inter"], "label-md": ["Inter"], "body-sm": ["Inter"] }, "fontSize": { "headline-lg": ["32px", { "lineHeight": "40px", "fontWeight": "700" }], "headline-md": ["20px", { "lineHeight": "28px", "fontWeight": "600" }], "headline-lg-mobile": ["24px", { "lineHeight": "32px", "fontWeight": "700" }], "body-lg": ["18px", { "lineHeight": "28px", "fontWeight": "400" }], "label-sm": ["12px", { "lineHeight": "16px", "fontWeight": "500" }], "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }], "label-md": ["14px", { "lineHeight": "20px", "letterSpacing": "0.02em", "fontWeight": "600" }], "body-sm": ["14px", { "lineHeight": "20px", "fontWeight": "400" }] } } } };</script><style>@layer base { body { -webkit-tap-highlight-color: transparent; scroll-behavior: smooth; } .pb-safe { padding-bottom: env(safe-area-inset-bottom, 0px); } .pt-safe { padding-top: env(safe-area-inset-top, 0px); } } .glass { backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }</style><style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head><body class="bg-slate-bg text-on-surface font-body-md"><header class="fixed top-0 w-full z-50 bg-surface/85 glass pt-safe shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="h-16 px-margin-mobile flex items-center justify-between"><div class="flex items-center gap-stack-sm"><div class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center"><span class="material-symbols-outlined text-on-primary text-[20px]">settings_voice</span></div><span class="font-headline-md text-headline-md text-on-surface">VoiceBill</span></div><div class="flex items-center gap-stack-md"><span class="hidden sm:block font-label-md text-label-md text-on-surface-variant">San Pham</span><div class="w-8 h-8 rounded-full bg-surface-container-highest flex items-center justify-center border border-outline-variant"><span class="material-symbols-outlined text-[20px] text-on-surface-variant">person</span></div></div></div></header><main class="pt-16 min-h-screen"><div class="flex flex-col w-full">
+<!-- Search Header Section -->
+<div class="px-margin-mobile py-stack-md bg-surface/90 glass sticky top-0 z-10">
+<div class="relative group">
+<div class="absolute inset-y-0 left-4 flex items-center pointer-events-none">
+<span class="material-symbols-outlined text-cool-gray-muted text-[28px]">search</span>
+</div>
+<input class="w-full h-16 pl-14 pr-6 rounded-xl bg-surface-container-highest text-on-surface font-body-lg text-body-lg placeholder:text-on-surface-variant/60 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all" placeholder="Tìm sản phẩm..." type="text"/>
+</div>
+<!-- Quick Filter Chips -->
+<div class="flex gap-stack-sm mt-stack-md overflow-x-auto pb-2 no-scrollbar">
+<button class="px-6 py-2 bg-primary text-on-primary rounded-full font-label-md text-label-md whitespace-nowrap">Tất cả</button>
+<button class="px-6 py-2 bg-surface-container-high text-on-surface-variant rounded-full font-label-md text-label-md whitespace-nowrap">Gạo &amp; Ngũ cốc</button>
+<button class="px-6 py-2 bg-surface-container-high text-on-surface-variant rounded-full font-label-md text-label-md whitespace-nowrap">Gia vị</button>
+<button class="px-6 py-2 bg-surface-container-high text-on-surface-variant rounded-full font-label-md text-label-md whitespace-nowrap">Đồ uống</button>
+</div>
+</div>
+<!-- Product List -->
+<div class="px-margin-mobile flex flex-col gap-stack-md mt-stack-sm">
+<!-- Product Card 1 -->
+<div class="bg-surface-container-lowest rounded-xl p-5 shadow-sm active:scale-[0.98] transition-transform">
+<div class="flex justify-between items-start mb-3">
+<div class="flex flex-col gap-1">
+<h2 class="font-headline-md text-headline-md text-on-background">Gạo ST25 (Túi 5kg)</h2>
+<div class="flex items-center gap-2">
+<span class="px-3 py-1 bg-secondary-container text-on-secondary-container rounded-lg font-label-md text-label-md">Viết tắt: ST</span>
+<span class="text-cool-gray-muted font-body-sm text-body-sm">• Kho: 45 túi</span>
+</div>
+</div>
+<div class="w-16 h-16 rounded-lg overflow-hidden bg-surface-container">
+<img class="w-full h-full object-cover" data-alt="A high-quality close-up photo of premium Vietnamese ST25 rice grains spilling out of a rustic burlap sack. The lighting is warm and natural, highlighting the long, slender, pearly white texture of the rice. Soft emerald green accents in the background evoke a sense of organic farming and freshness, matching a modern clean grocery aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDlDUgDKjPGyrV4npg3UXjItQ3mFO3pdrvS7efTuLNXMF2vEzwc6EfLd6wBhikZAWDZB85Ah4R1XkqhM1Sf4aJWnuiIrVmPMk-pOovd5cXxeEQdzfgu20sMs6uuNXGXnt-3tEW5TNSCa2GJhjdH90Q6AhVUsk1XaKzseqdc9PSWpqfXNLwpkCZ38NvUND0KZZlwdZMM6vdC9lVvO8_iTNwOp5FIj6LmyUvYiKkPsQRaBJ37HCYrlpjx"/>
+</div>
+</div>
+<div class="flex items-center justify-between mt-4 pt-4 border-t border-surface-variant/30">
+<span class="font-headline-lg-mobile text-headline-lg-mobile text-primary">165.000 đ</span>
+<div class="flex items-center gap-6">
+<button class="flex items-center gap-1 text-tertiary font-label-md text-label-md px-2 py-1">
+<span class="material-symbols-outlined text-[24px]">edit</span>
+            Sửa
+          </button>
+<button class="flex items-center justify-center w-10 h-10 bg-error-container/30 rounded-full text-error-crimson">
+<span class="material-symbols-outlined text-[24px]">delete</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Product Card 2 -->
+<div class="bg-surface-container-lowest rounded-xl p-5 shadow-sm">
+<div class="flex justify-between items-start mb-3">
+<div class="flex flex-col gap-1">
+<h2 class="font-headline-md text-headline-md text-on-background">Nước mắm cá cơm</h2>
+<div class="flex items-center gap-2">
+<span class="px-3 py-1 bg-secondary-container text-on-secondary-container rounded-lg font-label-md text-label-md">Viết tắt: NM</span>
+<span class="text-cool-gray-muted font-body-sm text-body-sm">• Kho: 12 chai</span>
+</div>
+</div>
+<div class="w-16 h-16 rounded-lg overflow-hidden bg-surface-container">
+<img class="w-full h-full object-cover" data-alt="A professional product shot of a premium glass bottle of traditional Vietnamese fish sauce. The amber liquid glows under studio lighting, reflecting deep golden hues. The background is a clean, minimalist kitchen setting with soft shadows, emphasizing a high-quality artisanal condiment. Emerald green silk ribbons or leaves are subtly placed nearby." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAALetUZv0tN1lKoT5Worejq1DlB0M8HMI9pLInTybb1bCcA_BOXasErAhYcLXmrQYqPSX8Uqe6p63oEtmd88QY7QVD54RQ3SmVjDr3Ew8kEE81lbJrd7nMdzACPi2Hj6rL9ap82SM9MJ7WL4K1o_5tG1G3iuxgkIB56AGBKbK0u3Ej-LjzeD8kDTSwxXG7a6dKAbMiu8On5iLKQmVn3H5DjJCEMA2LAouD9TSzMB-UkWuRP0L1c_4f"/>
+</div>
+</div>
+<div class="flex items-center justify-between mt-4 pt-4 border-t border-surface-variant/30">
+<span class="font-headline-lg-mobile text-headline-lg-mobile text-primary">45.000 đ</span>
+<div class="flex items-center gap-6">
+<button class="flex items-center gap-1 text-tertiary font-label-md text-label-md px-2 py-1">
+<span class="material-symbols-outlined text-[24px]">edit</span>
+            Sửa
+          </button>
+<button class="flex items-center justify-center w-10 h-10 bg-error-container/30 rounded-full text-error-crimson">
+<span class="material-symbols-outlined text-[24px]">delete</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Product Card 3 -->
+<div class="bg-surface-container-lowest rounded-xl p-5 shadow-sm">
+<div class="flex justify-between items-start mb-3">
+<div class="flex flex-col gap-1">
+<h2 class="font-headline-md text-headline-md text-on-background">Dầu ăn Meizan 1L</h2>
+<div class="flex items-center gap-2">
+<span class="px-3 py-1 bg-secondary-container text-on-secondary-container rounded-lg font-label-md text-label-md">Viết tắt: DA</span>
+<span class="text-cool-gray-muted font-body-sm text-body-sm">• Kho: 24 chai</span>
+</div>
+</div>
+<div class="w-16 h-16 rounded-lg overflow-hidden bg-surface-container">
+<img class="w-full h-full object-cover" data-alt="A vibrant and clean photograph of a clear plastic bottle of cooking oil. The oil is a bright, translucent yellow-gold, catching the light beautifully. The environment is a bright, airy modern grocery shelf with a focus on purity and health. Soft emerald green and dark slate tones provide a sophisticated contrast in the background blur." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDME7veFMqrxjwPLBo4cKqXilNACO2H8vCcJVxLE6FeQcWhAgf5qiRj2F2Os_hQdy6yev8s0-NINeEtO4nsTkQRm3GGOj45jSJEfr5Zkv2bGFVtpd8VTD0LKvvrfUQubbYGYfS59l711gIXHy447Ez3GvriJM-f64nBc9BtX0R35rd-kc66B9zI9_-1e23zThobFJv5lKS24jy7TIi_czlaRGozok-patF437czNkXae3Aadf6pVIgP"/>
+</div>
+</div>
+<div class="flex items-center justify-between mt-4 pt-4 border-t border-surface-variant/30">
+<span class="font-headline-lg-mobile text-headline-lg-mobile text-primary">33.000 đ</span>
+<div class="flex items-center gap-6">
+<button class="flex items-center gap-1 text-tertiary font-label-md text-label-md px-2 py-1">
+<span class="material-symbols-outlined text-[24px]">edit</span>
+            Sửa
+          </button>
+<button class="flex items-center justify-center w-10 h-10 bg-error-container/30 rounded-full text-error-crimson">
+<span class="material-symbols-outlined text-[24px]">delete</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Empty State / Load More Decor -->
+<div class="py-stack-lg flex flex-col items-center justify-center opacity-40">
+<span class="material-symbols-outlined text-[48px] mb-2">inventory_2</span>
+<p class="font-body-md text-body-md">Đã hiển thị hết sản phẩm</p>
+</div>
+</div>
+<!-- Floating Action Button for New Product -->
+<div class="fixed bottom-24 right-6 z-40">
+<button class="w-16 h-16 bg-primary text-on-primary rounded-full shadow-xl flex items-center justify-center active:scale-95 transition-transform">
+<span class="material-symbols-outlined text-[32px]">add</span>
+</button>
+</div>
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+      // Micro-interaction: Search bar focus effect
+      const searchInput = document.querySelector('input[type="text"]');
+      searchInput.addEventListener('focus', () => {
+        searchInput.parentElement.classList.add('scale-[1.02]');
+        searchInput.parentElement.classList.add('shadow-md');
+      });
+      searchInput.addEventListener('blur', () => {
+        searchInput.parentElement.classList.remove('scale-[1.02]');
+        searchInput.parentElement.classList.remove('shadow-md');
+      });
+
+      // Simple delete confirmation micro-interaction
+      const deleteButtons = document.querySelectorAll('.text-error-crimson');
+      deleteButtons.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const card = e.target.closest('.bg-surface-container-lowest');
+          card.style.opacity = '0.5';
+          card.style.transform = 'translateX(10px)';
+          setTimeout(() => {
+            if(confirm('Xác nhận xoá sản phẩm này?')) {
+              card.remove();
+            } else {
+              card.style.opacity = '1';
+              card.style.transform = 'translateX(0)';
+            }
+          }, 100);
+        });
+      });
+    });
+  </script>
+</div><div class="h-24"></div></main><nav class="fixed bottom-0 w-full z-50 bg-surface/90 glass pb-safe" data-active-classes="text-primary"><div class="flex items-center justify-around h-16 px-2"><a class="flex flex-col items-center justify-center min-w-[64px] gap-1 transition-colors text-on-surface-variant" data-path="ban-hang" href="#"><span class="material-symbols-outlined">mic</span><span class="font-label-sm text-label-sm">Bán Hàng</span></a><a aria-current="page" class="flex flex-col items-center justify-center min-w-[64px] gap-1 transition-colors text-primary" data-path="san-pham" href="#"><span class="material-symbols-outlined">inventory_2</span><span class="font-label-sm text-label-sm">Sản Phẩm</span></a><a class="flex flex-col items-center justify-center min-w-[64px] gap-1 transition-colors text-on-surface-variant" data-path="bao-cao" href="#"><span class="material-symbols-outlined">analytics</span><span class="font-label-sm text-label-sm">Báo Cáo</span></a><a class="flex flex-col items-center justify-center min-w-[64px] gap-1 transition-colors text-on-surface-variant" data-path="cai-dat" href="#"><span class="material-symbols-outlined">settings</span><span class="font-label-sm text-label-sm">Cài Đặt</span></a></div></nav></body></html>

@@ -50,6 +50,12 @@ export const initDB = async () => {
       FOREIGN KEY (product_id) REFERENCES products (id)
     );
   `);
+
+  try {
+    database.execSync(`ALTER TABLE invoices ADD COLUMN payment_method TEXT DEFAULT 'chuyển khoản';`);
+  } catch (e) {
+    // Ignore error if column already exists
+  }
 };
 
 export const calculateInvoiceTotals = (
@@ -103,8 +109,8 @@ export const saveInvoiceToDB = (invoice: Invoice): number => {
   const totals = calculateInvoiceTotals(invoice.items, invoice.discount_amount, invoice.paid_amount);
 
   const result = database.runSync(
-    `INSERT INTO invoices (invoice_code, customer_name, total_quantity, subtotal_amount, discount_amount, final_amount, paid_amount, change_amount)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO invoices (invoice_code, customer_name, total_quantity, subtotal_amount, discount_amount, final_amount, paid_amount, change_amount, payment_method)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       invoice.invoice_code,
       invoice.customer_name || null,
@@ -114,6 +120,7 @@ export const saveInvoiceToDB = (invoice: Invoice): number => {
       totals.final_amount,
       totals.paid_amount || null,
       totals.change_amount || null,
+      invoice.payment_method || 'chuyển khoản',
     ]
   );
 

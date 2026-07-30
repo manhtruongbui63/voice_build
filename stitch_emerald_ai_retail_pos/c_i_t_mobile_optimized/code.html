@@ -1,0 +1,161 @@
+<html lang="vi"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/><link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { "colors": { "warning-surface": "#FEF3C7", "tertiary-container": "#7f9fff", "secondary-fixed-dim": "#bec6e0", "on-secondary-container": "#5c647a", "on-primary-fixed": "#002113", "outline-variant": "#bbcabf", "cool-gray-muted": "#64748B", "on-background": "#161d19", "tertiary": "#0053db", "on-surface-variant": "#3c4a42", "on-secondary-fixed-variant": "#3f465c", "warning-amber": "#F59E0B", "primary-fixed-dim": "#4edea3", "on-secondary-fixed": "#131b2e", "primary-fixed": "#6ffbbe", "error-crimson": "#EF4444", "on-error-container": "#93000a", "inverse-primary": "#4edea3", "on-primary-container": "#00422b", "on-error": "#ffffff", "error-container": "#ffdad6", "background": "#f4fbf4", "primary-container": "#10b981", "surface-container-lowest": "#ffffff", "on-tertiary": "#ffffff", "surface-container": "#e8f0e9", "on-tertiary-fixed": "#00174b", "on-primary-fixed-variant": "#005236", "surface-tint": "#006c49", "primary": "#006c49", "surface-container-low": "#eef6ee", "mint": "#34D399", "on-secondary": "#ffffff", "emerald-active": "#059669", "secondary": "#565e74", "on-tertiary-fixed-variant": "#003ea8", "outline": "#6c7a71", "surface-bright": "#f4fbf4", "surface": "#f4fbf4", "error": "#ba1a1a", "surface-dim": "#d4dcd5", "inverse-surface": "#2b322d", "on-primary": "#ffffff", "on-tertiary-container": "#00328b", "surface-container-high": "#e3eae3", "secondary-container": "#dae2fd", "surface-variant": "#dde4dd", "inverse-on-surface": "#ebf3eb", "tertiary-fixed": "#dbe1ff", "secondary-fixed": "#dae2fd", "on-surface": "#161d19", "surface-container-highest": "#dde4dd", "emerald-soft": "#D1FAE5", "tertiary-fixed-dim": "#b4c5ff", "slate-bg": "#F8FAFC" }, "borderRadius": { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" }, "spacing": { "margin-mobile": "1rem", "stack-sm": "0.5rem", "stack-md": "1rem", "stack-lg": "1.5rem", "margin-tablet": "2rem", "gutter": "1rem" }, "fontFamily": { "headline-lg": ["Plus Jakarta Sans"], "headline-md": ["Plus Jakarta Sans"], "headline-lg-mobile": ["Plus Jakarta Sans"], "body-lg": ["Inter"], "label-sm": ["Inter"], "body-md": ["Inter"], "label-md": ["Inter"], "body-sm": ["Inter"] }, "fontSize": { "headline-lg": ["32px", { "lineHeight": "40px", "fontWeight": "700" }], "headline-md": ["20px", { "lineHeight": "28px", "fontWeight": "600" }], "headline-lg-mobile": ["24px", { "lineHeight": "32px", "fontWeight": "700" }], "body-lg": ["18px", { "lineHeight": "28px", "fontWeight": "400" }], "label-sm": ["12px", { "lineHeight": "16px", "fontWeight": "500" }], "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }], "label-md": ["14px", { "lineHeight": "20px", "letterSpacing": "0.02em", "fontWeight": "600" }], "body-sm": ["14px", { "lineHeight": "20px", "fontWeight": "400" }] } } } };</script><style>@layer base { body { -webkit-tap-highlight-color: transparent; scroll-behavior: smooth; } .pb-safe { padding-bottom: env(safe-area-inset-bottom, 0px); } .pt-safe { padding-top: env(safe-area-inset-top, 0px); } } .glass { backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }</style><style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head><body class="bg-slate-bg text-on-surface font-body-md"><header class="fixed top-0 w-full z-50 bg-surface/85 glass pt-safe shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="h-16 px-margin-mobile flex items-center justify-between"><div class="flex items-center gap-stack-sm"><div class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center"><span class="material-symbols-outlined text-on-primary text-[20px]">settings_voice</span></div><span class="font-headline-md text-headline-md text-on-surface">VoiceBill</span></div><div class="flex items-center gap-stack-md"><span class="hidden sm:block font-label-md text-label-md text-on-surface-variant">Cai Dat</span><div class="w-8 h-8 rounded-full bg-surface-container-highest flex items-center justify-center border border-outline-variant"><span class="material-symbols-outlined text-[20px] text-on-surface-variant">person</span></div></div></div></header><main class="pt-16 min-h-screen"><div class="flex flex-col w-full p-margin-mobile space-y-stack-lg">
+<!-- Profile Summary Card -->
+<div class="bg-surface-container rounded-xl p-stack-lg shadow-sm flex items-center gap-stack-md">
+<div class="w-16 h-16 rounded-full bg-primary flex items-center justify-center text-on-primary">
+<span class="material-symbols-outlined text-[32px]">storefront</span>
+</div>
+<div class="flex-1 min-w-0">
+<div class="font-headline-md text-headline-md text-on-surface truncate">Tiệm Tạp Hóa Cô Lan</div>
+<div class="font-label-md text-label-md text-on-surface-variant">Gói chuyên nghiệp • Đang hoạt động</div>
+</div>
+</div>
+<!-- Gemini API Configuration Card -->
+<div class="bg-surface-container-low rounded-xl p-stack-lg shadow-md space-y-stack-md">
+<div class="flex items-center gap-stack-sm">
+<span class="material-symbols-outlined text-primary">psychology</span>
+<h2 class="font-headline-md text-headline-md text-on-surface">Kết nối Trí tuệ Nhân tạo</h2>
+</div>
+<div class="space-y-stack-sm">
+<label class="font-label-md text-label-md text-on-surface-variant px-1">Mã Gemini API Key</label>
+<div class="relative">
+<input class="w-full h-14 bg-surface-container-highest rounded-lg px-4 pr-12 font-body-lg text-body-lg text-on-surface outline-none ring-2 ring-transparent focus:ring-primary/20 transition-all" id="api-key-input" readonly="" type="password" value="AIzaSyA1B2C3D4E5F6G7H8I9J0K"/>
+<button class="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 flex items-center justify-center text-on-surface-variant active:scale-95 transition-transform" onclick="togglePassword()">
+<span class="material-symbols-outlined" id="eye-icon">visibility</span>
+</button>
+</div>
+</div>
+<!-- Status Badge -->
+<div class="flex items-center gap-2 bg-emerald-soft/30 px-3 py-2 rounded-lg w-fit">
+<span class="material-symbols-outlined text-primary text-[20px]" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+<span class="font-label-md text-label-md text-primary">API Key hợp lệ</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant italic">
+      Mã này giúp AI hiểu giọng nói của bạn để tạo hóa đơn tự động.
+    </p>
+</div>
+<!-- Font Size Setting Card -->
+<div class="bg-surface-container-low rounded-xl p-stack-lg shadow-md space-y-stack-md">
+<div class="flex items-center gap-stack-sm">
+<span class="material-symbols-outlined text-primary">format_size</span>
+<h2 class="font-headline-md text-headline-md text-on-surface">Kích thước chữ</h2>
+</div>
+<div class="grid grid-cols-3 gap-stack-sm p-1 bg-surface-container-highest rounded-xl">
+<button class="font-size-btn flex flex-col items-center justify-center py-3 rounded-lg transition-all" data-size="small" onclick="setFontSize('small')">
+<span class="text-sm font-bold text-on-surface-variant">A</span>
+<span class="font-label-sm text-label-sm mt-1">Vừa</span>
+</button>
+<button class="font-size-btn flex flex-col items-center justify-center py-3 rounded-lg bg-primary text-on-primary shadow-sm" data-size="medium" onclick="setFontSize('medium')">
+<span class="text-lg font-bold">A</span>
+<span class="font-label-sm text-label-sm mt-1">Lớn</span>
+</button>
+<button class="font-size-btn flex flex-col items-center justify-center py-3 rounded-lg transition-all" data-size="large" onclick="setFontSize('large')">
+<span class="text-2xl font-bold text-on-surface-variant">A</span>
+<span class="font-label-sm text-label-sm mt-1">Rất lớn</span>
+</button>
+</div>
+</div>
+<!-- Default Payment Method Card -->
+<div class="bg-surface-container-low rounded-xl p-stack-lg shadow-md space-y-stack-md">
+<div class="flex items-center gap-stack-sm">
+<span class="material-symbols-outlined text-primary">payments</span>
+<h2 class="font-headline-md text-headline-md text-on-surface">Thanh toán mặc định</h2>
+</div>
+<div class="space-y-stack-sm">
+<!-- Cash Option -->
+<label class="relative flex items-center p-4 rounded-xl cursor-pointer bg-surface-container-highest transition-all group overflow-hidden border-2 border-transparent has-[:checked]:border-primary has-[:checked]:bg-emerald-soft/20">
+<input checked="" class="sr-only peer" name="payment" type="radio" value="cash"/>
+<div class="flex items-center gap-stack-md w-full">
+<div class="w-12 h-12 rounded-full bg-surface-container flex items-center justify-center text-on-surface-variant peer-checked:bg-primary peer-checked:text-on-primary">
+<span class="material-symbols-outlined text-[28px]">payments</span>
+</div>
+<div class="flex-1">
+<div class="font-headline-md text-headline-md text-on-surface">Tiền mặt</div>
+<div class="font-body-sm text-body-sm text-on-surface-variant">Trả trực tiếp cho cửa hàng</div>
+</div>
+<span class="material-symbols-outlined text-primary opacity-0 peer-checked:opacity-100 transition-opacity">check_circle</span>
+</div>
+</label>
+<!-- Bank Transfer Option -->
+<label class="relative flex items-center p-4 rounded-xl cursor-pointer bg-surface-container-highest transition-all group overflow-hidden border-2 border-transparent has-[:checked]:border-primary has-[:checked]:bg-emerald-soft/20">
+<input class="sr-only peer" name="payment" type="radio" value="transfer"/>
+<div class="flex items-center gap-stack-md w-full">
+<div class="w-12 h-12 rounded-full bg-surface-container flex items-center justify-center text-on-surface-variant peer-checked:bg-primary peer-checked:text-on-primary">
+<span class="material-symbols-outlined text-[28px]">account_balance</span>
+</div>
+<div class="flex-1">
+<div class="font-headline-md text-headline-md text-on-surface">Chuyển khoản</div>
+<div class="font-body-sm text-body-sm text-on-surface-variant">Quét mã QR Ngân hàng</div>
+</div>
+<span class="material-symbols-outlined text-primary opacity-0 peer-checked:opacity-100 transition-opacity">check_circle</span>
+</div>
+</label>
+</div>
+</div>
+<!-- Decorative Support Section -->
+<div class="relative bg-primary rounded-2xl p-stack-lg overflow-hidden">
+<div class="relative z-10 space-y-stack-sm">
+<div class="font-headline-md text-headline-md text-on-primary">Cần hỗ trợ?</div>
+<p class="font-body-md text-body-md text-on-primary/80">Gọi ngay cho tổng đài nếu bạn gặp khó khăn khi sử dụng.</p>
+<button class="bg-surface-container-lowest text-primary px-6 py-3 rounded-full font-label-md text-label-md flex items-center gap-2 active:scale-95 transition-transform shadow-lg">
+<span class="material-symbols-outlined">call</span>
+        Gọi 1900 8888
+      </button>
+</div>
+<!-- Abstract background shape -->
+<div class="absolute -right-8 -bottom-8 w-32 h-32 bg-mint/20 rounded-full blur-3xl"></div>
+<div class="absolute -left-8 -top-8 w-24 h-24 bg-white/10 rounded-full blur-2xl"></div>
+</div>
+<!-- Interaction Script -->
+<script>
+    function togglePassword() {
+      const input = document.getElementById('api-key-input');
+      const icon = document.getElementById('eye-icon');
+      if (input.type === 'password') {
+        input.type = 'text';
+        icon.textContent = 'visibility_off';
+      } else {
+        input.type = 'password';
+        icon.textContent = 'visibility';
+      }
+    }
+
+    function setFontSize(size) {
+      const buttons = document.querySelectorAll('.font-size-btn');
+      buttons.forEach(btn => {
+        if (btn.dataset.size === size) {
+          btn.classList.add('bg-primary', 'text-on-primary', 'shadow-sm');
+          btn.classList.remove('text-on-surface-variant');
+          const spanIcon = btn.querySelector('span:first-child');
+          const spanLabel = btn.querySelector('span:last-child');
+          spanIcon.classList.remove('text-on-surface-variant');
+          spanIcon.classList.add('text-on-primary');
+        } else {
+          btn.classList.remove('bg-primary', 'text-on-primary', 'shadow-sm');
+          btn.classList.add('text-on-surface-variant');
+          const spanIcon = btn.querySelector('span:first-child');
+          spanIcon.classList.add('text-on-surface-variant');
+        }
+      });
+
+      // Feedback animation
+      const root = document.querySelector('.flex.flex-col.w-full');
+      root.style.transform = 'scale(0.99)';
+      setTimeout(() => { root.style.transform = 'scale(1)'; }, 100);
+    }
+
+    // Subtle vibration feedback for radios
+    document.querySelectorAll('input[type="radio"]').forEach(radio => {
+      radio.addEventListener('change', () => {
+        if (window.navigator.vibrate) {
+          window.navigator.vibrate(10);
+        }
+      });
+    });
+  </script>
+</div><div class="h-24"></div></main><nav class="fixed bottom-0 w-full z-50 bg-surface/90 glass pb-safe" data-active-classes="text-primary"><div class="flex items-center justify-around h-16 px-2"><a class="flex flex-col items-center justify-center min-w-[64px] gap-1 transition-colors text-on-surface-variant" data-path="ban-hang" href="#"><span class="material-symbols-outlined">mic</span><span class="font-label-sm text-label-sm">Bán Hàng</span></a><a class="flex flex-col items-center justify-center min-w-[64px] gap-1 transition-colors text-on-surface-variant" data-path="san-pham" href="#"><span class="material-symbols-outlined">inventory_2</span><span class="font-label-sm text-label-sm">Sản Phẩm</span></a><a class="flex flex-col items-center justify-center min-w-[64px] gap-1 transition-colors text-on-surface-variant" data-path="bao-cao" href="#"><span class="material-symbols-outlined">analytics</span><span class="font-label-sm text-label-sm">Báo Cáo</span></a><a aria-current="page" class="flex flex-col items-center justify-center min-w-[64px] gap-1 transition-colors text-primary" data-path="cai-dat" href="#"><span class="material-symbols-outlined">settings</span><span class="font-label-sm text-label-sm">Cài Đặt</span></a></div></nav></body></html>

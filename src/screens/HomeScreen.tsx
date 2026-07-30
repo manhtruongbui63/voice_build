@@ -1,10 +1,13 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator, Alert } from 'react-native';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator, Alert, Animated, Easing } from 'react-native';
+import { MaterialIcons } from '@expo/vector-icons';
 import { getProductsFromDB } from '../services/db';
 import { parseVoiceTranscript } from '../services/aiParser';
 import { getGeminiApiKey } from '../services/geminiSettingsService';
-import { MatchedItem } from '../types';
+import { MatchedItem, PaymentMethod } from '../types';
 import { DraftInvoiceModal } from '../components/DraftInvoiceModal';
+import { useVoiceInvoiceRecognition, VoiceRecognitionErrorCode } from '../hooks/useVoiceInvoiceRecognition';
+import { colors, typography, fontFamily } from '../theme/tokens';
 
 const SAFE_PARSER_MESSAGES = new Set([
   'Chưa có Gemini API Key',
@@ -20,19 +23,27 @@ const getSafeParserErrorMessage = (error: unknown): string =>
     ? error.message
     : 'Không thể xử lý yêu cầu Gemini';
 
+const RECOGNITION_ERROR_MESSAGES: Record<VoiceRecognitionErrorCode, string> = {
+  'permission-denied': 'Cần quyền Microphone và Nhận dạng giọng nói để sử dụng tính năng này.',
+  unavailable: 'Nhận dạng giọng nói hiện không khả dụng trên thiết bị.',
+  'no-speech': 'Không nghe thấy nội dung. Vui lòng thử lại.',
+  'recognition-failed': 'Không thể nhận dạng giọng nói. Vui lòng thử lại.',
+};
+
 export interface HomeScreenProps {
   onOpenSettings: () => void;
 }
 
 export const HomeScreen: React.FC<HomeScreenProps> = ({ onOpenSettings }) => {
-  const [isRecording, setIsRecording] = useState(false);
   const [loading, setLoading] = useState(false);
   const [transcript, setTranscript] = useState('');
   const [matchedItems, setMatchedItems] = useState<MatchedItem[]>([]);
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('chuyển khoản');
   const [draftVisible, setDraftVisible] = useState(false);
   const isMountedRef = useRef(true);
   const microphonePendingRef = useRef(false);
-  const recordingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const apiKeyRef = useRef<string | null>(null);
+  const parserPendingRef = useRef(false);
 
   useEffect(() => {
     isMountedRef.current = true;
@@ -40,25 +51,27 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onOpenSettings }) => {
     return () => {
       isMountedRef.current = false;
       microphonePendingRef.current = false;
-      if (recordingTimerRef.current) {
-        clearTimeout(recordingTimerRef.current);
-        recordingTimerRef.current = null;
-      }
+      apiKeyRef.current = null;
+      parserPendingRef.current = false;
     };
   }, []);
 
-  const handleSimulatedVoiceTest = async (
-    testVoiceString: string,
-    apiKey: string
-  ) => {
+  const handleFinalTranscript = useCallback(async (finalText: string) => {
     if (!isMountedRef.current) return;
+    
+    const trimmedText = finalText.trim();
+    const apiKey = apiKeyRef.current;
+    apiKeyRef.current = null;
 
-    setTranscript(testVoiceString);
+    if (!trimmedText || !apiKey || parserPendingRef.current) return;
+
+    setTranscript(trimmedText);
     setLoading(true);
+    parserPendingRef.current = true;
 
     try {
       const products = getProductsFromDB();
-      const result = await parseVoiceTranscript(testVoiceString, products, apiKey);
+      const result = await parseVoiceTranscript(trimmedText, products, apiKey);
       if (!isMountedRef.current) return;
 
       const mappedItems: MatchedItem[] = result.matched_items.map((item) => {
@@ -76,6 +89,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onOpenSettings }) => {
       });
 
       setMatchedItems(mappedItems);
+      setPaymentMethod(result.payment_method || 'chuyển khoản');
       setDraftVisible(true);
     } catch (err: unknown) {
       if (isMountedRef.current) {
@@ -85,19 +99,54 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onOpenSettings }) => {
         );
       }
     } finally {
-      if (isMountedRef.current) setLoading(false);
+      if (isMountedRef.current) {
+        setLoading(false);
+        parserPendingRef.current = false;
+      }
     }
-  };
+  }, []);
+
+  const handleRecognitionError = useCallback((code: VoiceRecognitionErrorCode) => {
+    apiKeyRef.current = null;
+    if (!isMountedRef.current) return;
+    Alert.alert('Lỗi nhận dạng giọng nói', RECOGNITION_ERROR_MESSAGES[code]);
+  }, []);
+
+  const productContextStrings = React.useMemo(() => {
+    try {
+      const products = getProductsFromDB();
+      return products.flatMap((p) => {
+        const aliases = p.aliases
+          ? p.aliases
+              .split(',')
+              .map((a) => a.trim())
+              .filter(Boolean)
+          : [];
+        return [p.name, ...aliases];
+      });
+    } catch {
+      return [];
+    }
+  }, []);
+
+  const recognition = useVoiceInvoiceRecognition({
+    onFinalTranscript: handleFinalTranscript,
+    onError: handleRecognitionError,
+    contextualStrings: productContextStrings,
+  });
 
   const handleMicrophonePress = async () => {
-    if (microphonePendingRef.current || isRecording || loading) return;
+    if (loading) return;
+    if (recognition.status === 'listening') {
+      recognition.stop();
+      return;
+    }
+    if (recognition.status !== 'idle' || microphonePendingRef.current) return;
 
     microphonePendingRef.current = true;
-    let recordingScheduled = false;
     try {
       const apiKey = await getGeminiApiKey();
       if (!isMountedRef.current) return;
-
       if (!apiKey) {
         Alert.alert(
           'Chưa có Gemini API Key',
@@ -109,24 +158,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onOpenSettings }) => {
         );
         return;
       }
-
-      setIsRecording(true);
-      recordingTimerRef.current = setTimeout(() => {
-        recordingTimerRef.current = null;
-        if (!isMountedRef.current) {
-          microphonePendingRef.current = false;
-          return;
-        }
-
-        setIsRecording(false);
-        void handleSimulatedVoiceTest(
-          'bán cho chị 1kg ST, à không lấy 2kg ST với 2 cân rưỡi Bắc Hướng',
-          apiKey
-        ).finally(() => {
-          microphonePendingRef.current = false;
-        });
-      }, 2500);
-      recordingScheduled = true;
+      apiKeyRef.current = apiKey;
+      await recognition.start();
     } catch {
       if (isMountedRef.current) {
         Alert.alert(
@@ -135,37 +168,134 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onOpenSettings }) => {
         );
       }
     } finally {
-      if (!recordingScheduled) {
-        microphonePendingRef.current = false;
-      }
+      microphonePendingRef.current = false;
     }
   };
 
+  const visibleTranscript = recognition.interimTranscript || transcript;
+  const isListening = recognition.status === 'listening' || recognition.status === 'stopping';
+  const isRequesting = recognition.status === 'requesting-permission';
+
+  // Đồng hồ thời gian ghi âm (mm:ss)
+  const [seconds, setSeconds] = useState(0);
+  useEffect(() => {
+    if (!isListening) {
+      setSeconds(0);
+      return;
+    }
+    const id = setInterval(() => setSeconds((s) => s + 1), 1000);
+    return () => clearInterval(id);
+  }, [isListening]);
+  const recordingTime = `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(
+    seconds % 60
+  ).padStart(2, '0')}`;
+
+  // Vòng sáng pulse quanh nút micro (chạy liên tục)
+  const pulse = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    const loop = Animated.loop(
+      Animated.timing(pulse, {
+        toValue: 1,
+        duration: 2500,
+        easing: Easing.out(Easing.ease),
+        useNativeDriver: true,
+      })
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [pulse]);
+
+  const handleGuide = () => {
+    Alert.alert(
+      'Hướng dẫn nhanh',
+      'Chạm nút micro và nói đơn hàng, ví dụ: "2 phở bò, 1 trà đá, chuyển khoản". VoiceBill sẽ tự tạo hóa đơn nháp để bạn kiểm tra.'
+    );
+  };
+
+  let statusText = 'Chạm để bắt đầu bán hàng';
+  if (isRequesting) statusText = 'Đang xin quyền...';
+  else if (isListening) statusText = 'Đang lắng nghe...';
+  else if (loading) statusText = 'Đang xử lý...';
+
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>VOICE BILLING</Text>
-      <Text style={styles.subtitle}>Nhấn Nút Micro Để Nói Khẩu Lệnh Bán Hàng</Text>
-
-      <TouchableOpacity
-        testID="voice-microphone-button"
-        style={[styles.micBtn, isRecording && styles.recordingActive]}
-        onPress={handleMicrophonePress}
-      >
-        <Text style={styles.micText}>{isRecording ? '🔴 Đang Nghe...' : '🎙️'}</Text>
-      </TouchableOpacity>
-
-      {loading && <ActivityIndicator size="large" color="#10B981" style={{ marginTop: 20 }} />}
-
-      {transcript ? (
-        <View style={styles.transcriptBox}>
-          <Text style={styles.transcriptTitle}>Văn bản vừa đọc:</Text>
-          <Text style={styles.transcriptContent}>"{transcript}"</Text>
+      {/* Header */}
+      <View style={styles.header}>
+        <View style={styles.brand}>
+          <View style={styles.logoBox}>
+            <MaterialIcons name="mic" size={20} color={colors.primary} />
+          </View>
+          <Text style={styles.brandName}>VoiceBill</Text>
         </View>
-      ) : null}
+        <View style={styles.avatar}>
+          <MaterialIcons name="person" size={24} color={colors.onSurfaceVariant} />
+        </View>
+      </View>
+
+      <View style={styles.body}>
+        {/* Status & AI Mode */}
+        <View style={styles.statusRow}>
+          <View style={styles.modeBadge}>
+            <View style={styles.modeDot} />
+            <Text style={styles.modeText}>CHẾ ĐỘ AI</Text>
+          </View>
+          <TouchableOpacity style={styles.guideBtn} onPress={handleGuide}>
+            <MaterialIcons name="help-outline" size={20} color={colors.onSurfaceVariant} />
+            <Text style={styles.guideText}>Hướng dẫn</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Immersive Hero */}
+        <View style={styles.hero}>
+          <Animated.View
+            pointerEvents="none"
+            style={[
+              styles.pulseRing,
+              {
+                opacity: pulse.interpolate({ inputRange: [0, 1], outputRange: [0.5, 0] }),
+                transform: [{ scale: pulse.interpolate({ inputRange: [0, 1], outputRange: [1, 1.35] }) }],
+              },
+            ]}
+          />
+          <TouchableOpacity
+            testID="voice-microphone-button"
+            activeOpacity={0.9}
+            style={[styles.micButton, isListening && styles.micButtonActive]}
+            onPress={handleMicrophonePress}
+          >
+            <MaterialIcons name={isListening ? 'stop' : 'mic'} size={72} color={colors.white} />
+          </TouchableOpacity>
+          <Text style={[styles.statusText, (isListening || loading) && styles.statusTextActive]}>
+            {statusText}
+          </Text>
+          {loading && <ActivityIndicator color={colors.primaryContainer} style={{ marginTop: 8 }} />}
+        </View>
+
+        {/* Live Transcript (glass) */}
+        <View style={styles.transcriptCard}>
+          <View style={styles.transcriptHeader}>
+            <Text style={styles.transcriptLabel}>BẢN DỊCH TRỰC TIẾP</Text>
+            {isListening ? (
+              <View style={styles.recordingIndicator}>
+                <View style={styles.recordingDot} />
+                <Text style={styles.recordingTime}>{recordingTime}</Text>
+              </View>
+            ) : null}
+          </View>
+          <View style={styles.transcriptBody}>
+            {visibleTranscript ? (
+              <Text style={styles.transcriptText}>{visibleTranscript}</Text>
+            ) : (
+              <Text style={styles.transcriptPlaceholder}>“Nhấn để bắt đầu nói...”</Text>
+            )}
+          </View>
+        </View>
+      </View>
 
       <DraftInvoiceModal
         visible={draftVisible}
         items={matchedItems}
+        paymentMethod={paymentMethod}
         onClose={() => setDraftVisible(false)}
         onSuccess={() => setTranscript('')}
       />
@@ -174,13 +304,115 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onOpenSettings }) => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F9FAFB', alignItems: 'center', justifyContent: 'center', padding: 20 },
-  title: { fontSize: 24, fontWeight: 'bold', color: '#111827' },
-  subtitle: { fontSize: 14, color: '#6B7280', marginTop: 4, marginBottom: 40 },
-  micBtn: { width: 140, height: 140, borderRadius: 70, backgroundColor: '#10B981', justifyContent: 'center', alignItems: 'center', elevation: 8 },
-  recordingActive: { backgroundColor: '#EF4444' },
-  micText: { fontSize: 32, color: '#FFF', fontWeight: 'bold' },
-  transcriptBox: { marginTop: 30, backgroundColor: '#FFF', padding: 16, borderRadius: 10, width: '100%', elevation: 2 },
-  transcriptTitle: { fontSize: 13, color: '#6B7280', fontWeight: '600' },
-  transcriptContent: { fontSize: 16, color: '#1F2937', marginTop: 4, fontStyle: 'italic' },
+  container: { flex: 1, backgroundColor: colors.slateBg },
+  // Header
+  header: {
+    height: 64,
+    paddingHorizontal: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: colors.white,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.outlineVariantSoft,
+  },
+  brand: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  logoBox: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    backgroundColor: colors.primarySoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  brandName: { ...typography.headlineMd, color: colors.primary },
+  avatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: colors.surfaceContainerHigh,
+    borderWidth: 2,
+    borderColor: colors.white,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  // Body
+  body: { flex: 1, paddingHorizontal: 16, paddingTop: 16, gap: 16 },
+  statusRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 8 },
+  modeBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 6,
+    borderRadius: 9999,
+    backgroundColor: colors.primaryContainerFaint,
+    borderWidth: 1,
+    borderColor: colors.primaryContainerBorder,
+  },
+  modeDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: colors.primaryContainer },
+  modeText: { fontFamily: fontFamily.interBold, fontSize: 11, color: colors.primaryContainer, letterSpacing: 1.5 },
+  guideBtn: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  guideText: { ...typography.labelSm, color: colors.onSurfaceVariant },
+  // Hero
+  hero: { alignItems: 'center', justifyContent: 'center', paddingTop: 24, paddingBottom: 8 },
+  pulseRing: {
+    position: 'absolute',
+    top: 24,
+    width: 176,
+    height: 176,
+    borderRadius: 88,
+    backgroundColor: colors.primaryContainer,
+  },
+  micButton: {
+    width: 176,
+    height: 176,
+    borderRadius: 88,
+    backgroundColor: colors.primaryContainer,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: colors.primaryContainer,
+    shadowOffset: { width: 0, height: 20 },
+    shadowOpacity: 0.4,
+    shadowRadius: 25,
+    elevation: 12,
+  },
+  micButtonActive: { transform: [{ scale: 1.06 }] },
+  statusText: { ...typography.headlineLgMobile, color: colors.onSurface, marginTop: 16, textAlign: 'center' },
+  statusTextActive: { color: colors.primaryContainer },
+  // Transcript (glass)
+  transcriptCard: {
+    backgroundColor: colors.glassSurface,
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: colors.glassBorder,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.04,
+    shadowRadius: 30,
+    elevation: 2,
+  },
+  transcriptHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 24,
+    paddingVertical: 16,
+    backgroundColor: colors.primaryContainerFaint,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.primaryContainerBorder,
+  },
+  transcriptLabel: { fontFamily: fontFamily.interBold, fontSize: 11, color: colors.primaryContainer, letterSpacing: 1.5 },
+  recordingIndicator: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  recordingDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: colors.errorCrimson },
+  recordingTime: { fontFamily: fontFamily.interBold, fontSize: 14, color: colors.errorCrimson },
+  transcriptBody: { minHeight: 160, alignItems: 'center', justifyContent: 'center', padding: 32 },
+  transcriptText: { fontFamily: fontFamily.jakartaMedium, fontSize: 24, lineHeight: 32, color: colors.onSurface, textAlign: 'center' },
+  transcriptPlaceholder: { fontFamily: fontFamily.jakartaMedium, fontSize: 24, lineHeight: 32, color: colors.onSurfaceVariant, textAlign: 'center' },
 });

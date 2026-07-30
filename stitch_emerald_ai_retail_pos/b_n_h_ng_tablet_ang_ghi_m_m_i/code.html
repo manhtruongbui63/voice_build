@@ -1,0 +1,279 @@
+<!DOCTYPE html><html lang="vi" style=""><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<style>
+@layer base{
+  html,body{margin:0;padding:0;}
+  body{overscroll-behavior:none;}
+  main>:first-child{margin-top:0!important;}
+  main>:last-child{margin-bottom:0!important;}
+}
+::-webkit-scrollbar{display:none;}
+@font-face{font-family:'Plus Jakarta Sans';src:url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');}
+@font-face{font-family:'Inter';src:url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');}
+</style>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+tailwind.config={
+  theme:{
+    extend:{
+      "colors":{
+        "cool-gray-muted":"#64748B",
+        "on-primary-fixed-variant":"#005236",
+        "background":"#f4fbf4",
+        "slate-bg":"#F8FAFC",
+        "primary-container":"#10b981",
+        "inverse-surface":"#2b322d",
+        "on-surface-variant":"#3c4a42",
+        "primary-fixed":"#6ffbbe",
+        "tertiary-fixed-dim":"#b4c5ff",
+        "surface-tint":"#006c49",
+        "surface-container":"#e8f0e9",
+        "on-tertiary-fixed":"#00174b",
+        "on-error-container":"#93000a",
+        "error-container":"#ffdad6",
+        "secondary":"#565e74",
+        "on-primary-container":"#00422b",
+        "secondary-fixed":"#dae2fd",
+        "warning-amber":"#F59E0B",
+        "on-primary":"#ffffff",
+        "surface-variant":"#dde4dd",
+        "outline":"#6c7a71",
+        "tertiary-fixed":"#dbe1ff",
+        "on-secondary-fixed-variant":"#3f465c",
+        "on-secondary-fixed":"#131b2e",
+        "primary-fixed-dim":"#4edea3",
+        "on-secondary-container":"#5c647a",
+        "surface-container-highest":"#dde4dd",
+        "inverse-on-surface":"#ebf3eb",
+        "surface-dim":"#d4dcd5",
+        "on-secondary":"#ffffff",
+        "surface-container-high":"#e3eae3",
+        "tertiary-container":"#7f9fff",
+        "surface-bright":"#f4fbf4",
+        "outline-variant":"#bbcabf",
+        "on-tertiary":"#ffffff",
+        "on-primary-fixed":"#002113",
+        "on-surface":"#161d19",
+        "secondary-container":"#dae2fd",
+        "warning-surface":"#FEF3C7",
+        "on-tertiary-fixed-variant":"#003ea8",
+        "surface-container-lowest":"#ffffff",
+        "primary":"#006c49",
+        "error-crimson":"#EF4444",
+        "tertiary":"#0053db",
+        "mint":"#34D399",
+        "on-tertiary-container":"#00328b",
+        "error":"#ba1a1a",
+        "surface":"#f4fbf4",
+        "emerald-active":"#059669",
+        "inverse-primary":"#4edea3",
+        "surface-container-low":"#eef6ee",
+        "emerald-soft":"#D1FAE5",
+        "on-background":"#161d19",
+        "on-error":"#ffffff",
+        "secondary-fixed-dim":"#bec6e0"
+      },
+      "borderRadius":{"DEFAULT":"0.25rem","lg":"0.5rem","xl":"0.75rem","full":"9999px"},
+      "spacing":{"stack-sm":"0.5rem","stack-md":"1rem","stack-lg":"1.5rem","margin-tablet":"2rem","margin-mobile":"1rem","gutter":"1rem"},
+      "fontFamily":{
+        "headline-lg":["Plus Jakarta Sans"],
+        "label-sm":["Inter"],
+        "body-sm":["Inter"],
+        "headline-md":["Plus Jakarta Sans"],
+        "body-lg":["Inter"],
+        "label-md":["Inter"],
+        "headline-lg-mobile":["Plus Jakarta Sans"],
+        "body-md":["Inter"]
+      },
+      "fontSize":{
+        "headline-lg":["36px",{"lineHeight":"44px","fontWeight":"700"}],
+        "label-sm":["14px",{"lineHeight":"20px","fontWeight":"500"}],
+        "body-sm":["16px",{"lineHeight":"24px","fontWeight":"400"}],
+        "headline-md":["24px",{"lineHeight":"32px","fontWeight":"600"}],
+        "body-lg":["20px",{"lineHeight":"30px","fontWeight":"400"}],
+        "label-md":["18px",{"lineHeight":"26px","letterSpacing":"0.02em","fontWeight":"600"}],
+        "headline-lg-mobile":["28px",{"lineHeight":"36px","fontWeight":"700"}],
+        "body-md":["18px",{"lineHeight":"28px","fontWeight":"400"}]
+      }
+    }
+  }
+}
+</script>
+</head>
+<body class="bg-slate-bg font-body-md text-on-surface">
+<!-- Top Navigation Header -->
+<header class="fixed top-0 left-0 right-0 h-20 bg-surface/80 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)] z-40 px-8 flex items-center justify-between">
+<div class="flex items-center gap-6">
+<div class="flex items-center gap-3">
+<img alt="VoiceBill Logo" class="h-10 w-auto object-contain" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDTux6RmjBTpzEGYNvYOeOtjmNB5zXDmtb_3pk-qwabgOxshrq7gw805Mlh_kudR0ePv06L84CmSKwXKJgDCgHfTj5-4AjxQoY3x3H-z4WUQzc5UPCX3c2AwDDo_jJXxzBqRoRYPsc3986UZqzRhsIebLUZvAer9cFxnGVGxL8i1G8JgNXgzS0eX5SYlHyaMVXjvsvZQaVUUPN31mHPo51FoA-f0fscvji7XcXCXjZiA0HFO_0iejP8">
+<span class="font-headline-md text-primary font-bold hidden sm:block">VoiceBill</span>
+</div>
+<div class="h-8 w-[1.5px] bg-outline-variant/30 hidden sm:block"></div>
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary text-3xl">store</span>
+<span class="font-headline-md text-on-surface">Cửa hàng Trung Tâm</span>
+</div>
+</div>
+<div class="flex items-center gap-6 text-on-surface-variant">
+<div class="text-right hidden sm:block">
+<div class="font-label-md text-on-surface">Quản lý Ca</div>
+<div class="text-[12px] uppercase tracking-wider font-bold text-primary">Đang hoạt động</div>
+</div>
+<img alt="Profile" class="w-12 h-12 rounded-full border-2 border-primary-container object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBisUyuUg1nmuYRCpzXPymHYj4pwfVPQR17GUIsvCf5S7HGtsW15rQdpBeABaak1T4QZ58TLxfuKU_uKFr2tl-0c3lRFksX2jhov9AmDsCoxaV-y8mp8FHyUrbtn18icDNSJreWydZxh-XZhTILN7wPuIY2YdgZao8dVsUpyKN7YlTd9N9cHv21MLCG0cm8TA4kSWoxrSLgzomKaLB-ngDFVENt7jfXFUWQuiA5LK0S5siUzgrLTKHZ">
+</div>
+</header>
+<!-- Main Content -->
+<main class="relative pt-20 pb-24 min-h-screen">
+<div class="flex flex-col w-full h-[calc(100vh-176px)] overflow-hidden">
+<div class="flex flex-1 w-full overflow-hidden">
+<!-- LEFT COLUMN: Voice Console (40%) -->
+<div class="w-[40%] flex flex-col p-10 bg-surface border-r border-outline-variant/30 relative overflow-hidden">
+<!-- Decorative Background Elements -->
+<div class="absolute -top-24 -left-24 w-64 h-64 bg-primary/5 rounded-full blur-3xl"></div>
+<div class="absolute bottom-0 right-0 w-96 h-96 bg-primary/10 rounded-full blur-[100px]"></div>
+<div class="relative z-10 flex flex-col h-full">
+<div class="mb-8">
+<span class="font-label-md text-primary uppercase tracking-[0.2em] mb-2 block">AI Voice Assistant</span>
+<h2 class="font-headline-lg text-on-surface"><span class="inline-block w-3 h-3 bg-error-crimson rounded-full mr-3 animate-pulse"></span>Đang lắng nghe...</h2>
+</div>
+<!-- Microphone Center -->
+<div class="flex-1 flex flex-col items-center justify-center">
+<div class="relative">
+<!-- Pulsing Rings -->
+<div class="absolute inset-0 rounded-full bg-error-crimson/20 animate-ping" style="animation-duration: 3s;"></div>
+<div class="absolute inset-0 rounded-full bg-error-crimson/10 animate-pulse" style="animation-duration: 2s;"></div>
+<button class="relative w-[220px] h-[220px] rounded-full bg-primary shadow-[0_0_60px_rgba(0,108,73,0.5)] flex items-center justify-center group transition-transform active:scale-95 animate-pulse" id="mic-trigger">
+<span class="material-symbols-outlined text-on-primary text-[100px] transition-all group-hover:scale-110" style="font-variation-settings: &quot;FILL&quot; 1;">mic</span>
+</button>
+<!-- Audio Visualizer Waves -->
+<div class="absolute -bottom-16 left-1/2 -translate-x-1/2 flex items-end gap-2 h-16 w-56 justify-center"><div class="w-2 bg-primary/40 rounded-full animate-[voice-wave_1.2s_ease-in-out_infinite]" style="height: 60%"></div><div class="w-2 bg-primary/60 rounded-full animate-[voice-wave_1.5s_ease-in-out_infinite_0.1s]" style="height: 90%"></div><div class="w-2 bg-primary rounded-full animate-[voice-wave_1s_ease-in-out_infinite_0.2s]" style="height: 100%"></div><div class="w-2 bg-primary/80 rounded-full animate-[voice-wave_0.8s_ease-in-out_infinite_0.15s]" style="height: 75%"></div><div class="w-2 bg-primary/60 rounded-full animate-[voice-wave_1.3s_ease-in-out_infinite_0.3s]" style="height: 85%"></div><div class="w-2 bg-primary/40 rounded-full animate-[voice-wave_1.1s_ease-in-out_infinite_0.4s]" style="height: 50%"></div></div>
+</div>
+</div>
+<!-- Live Transcript Card -->
+<div class="mt-auto bg-surface-container/50 backdrop-blur-md rounded-2xl p-8 shadow-sm border border-white/40 border-primary/40 shadow-[0_0_20px_rgba(0,108,73,0.2)]">
+<div class="flex items-center gap-3 mb-4">
+<div class="w-3 h-3 rounded-full bg-primary animate-pulse"></div>
+<span class="font-label-md text-cool-gray-muted uppercase tracking-wider">Bản ghi trực tiếp</span>
+</div>
+<p class="font-headline-md text-on-surface-variant leading-relaxed italic">
+                "Cho tôi <span class="text-primary font-bold">2 ly cà phê sữa đá</span> ít đường và <span class="text-primary font-bold">1 bánh mì kẹp thịt</span> đặc biệt..."
+              <span class="inline-block w-[2px] h-6 bg-primary ml-1 animate-pulse"></span></p>
+</div>
+</div>
+</div>
+<!-- RIGHT COLUMN: Checkout Panel (60%) -->
+<div class="w-[60%] bg-surface-container-low flex flex-col shadow-2xl relative">
+<!-- Header -->
+<div class="p-8 border-b border-on-surface-variant/10 flex justify-between items-end">
+<div>
+<h3 class="font-headline-lg text-on-surface mb-1">Đơn hàng mới</h3>
+<p class="font-body-md text-on-surface-variant">ID: #VB-9402 • 14:24 PM</p>
+</div>
+<div class="text-right">
+<span class="font-label-md text-primary uppercase tracking-widest block mb-1">Tổng cộng</span>
+<div class="font-headline-lg text-primary text-4xl leading-none">0đ</div>
+</div>
+</div>
+<!-- Draft Invoice Table -->
+<div class="flex-1 overflow-y-auto p-8 space-y-3"><div class="h-full flex flex-col items-center justify-center text-on-surface-variant opacity-50"><span class="material-symbols-outlined text-6xl mb-4">shopping_basket</span><p class="font-headline-md">Chưa có sản phẩm nào</p></div></div>
+<!-- Payment Section -->
+<div class="bg-surface-container-high p-8 border-t border-outline-variant/30">
+<div class="flex gap-6 mb-4" id="payment-toggle">
+<button class="flex-1 rounded-2xl bg-primary text-on-primary font-headline-md flex items-center justify-center gap-3 transition-all shadow-xl py-3" id="btn-cash" onclick="switchPayment('cash')">
+<span class="material-symbols-outlined text-4xl">payments</span> TIỀN MẶT
+              </button>
+<button class="flex-1 rounded-2xl bg-white text-on-surface font-headline-md flex items-center justify-center gap-3 border-2 border-outline-variant/30 hover:bg-surface-container transition-all py-3" id="btn-transfer" onclick="switchPayment('transfer')">
+<span class="material-symbols-outlined text-4xl">qr_code_2</span> CHUYỂN KHOẢN
+              </button>
+</div>
+<div class="transition-all duration-300 space-y-3 mb-4" id="cash-calculations">
+<div class="flex justify-between items-center">
+<span class="font-headline-md text-on-surface-variant">Khách đưa:</span>
+<input class="w-56 bg-white border border-outline-variant/30 rounded-xl p-4 text-right font-headline-md text-on-surface focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all shadow-sm hover:bg-surface-container-low" type="text" value="0">
+</div>
+<div class="flex justify-between items-center">
+<span class="font-headline-md text-on-surface-variant">Tiền thừa:</span>
+<span class="font-headline-lg text-primary text-4xl leading-none">0đ</span>
+</div>
+</div>
+<button class="w-full hover:bg-emerald-active shadow-[0_12px_40px_rgba(0,108,73,0.4)] transition-all active:scale-[0.97] flex items-center justify-center group py-4 rounded-2xl gap-3 opacity-50 bg-cool-gray-muted pointer-events-none" disabled="true">
+<span class="font-headline-lg text-on-primary uppercase tracking-[0.1em] text-2xl">Xác nhận &amp; Lưu hóa đơn</span>
+<span class="material-symbols-outlined text-on-primary text-4xl group-hover:translate-x-2 transition-transform">arrow_forward</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Bottom Navigation Bar (Optimized for Tablet) -->
+<nav class="fixed bottom-6 left-1/2 -translate-x-1/2 w-[90%] max-w-2xl bg-surface-container-highest/95 backdrop-blur-xl h-20 rounded-full shadow-[0_10px_30px_rgba(0,0,0,0.1)] z-50 flex items-center px-8 border border-white/20 justify-center gap-2">
+<a class="flex flex-col items-center justify-center gap-1 px-5 py-2 transition-all duration-300 bg-primary text-on-primary shadow-lg shadow-primary/20 scale-105" href="#" style="border-radius: 0.875rem;"><span class="material-symbols-outlined">mic</span><span class="font-label-sm text-label-sm">Bán Hàng</span></a>
+<a class="flex flex-col items-center gap-2 px-10 py-3 rounded-2xl text-cool-gray-muted hover:bg-black/5 transition-all" href="#"><span class="material-symbols-outlined">inventory_2</span><span class="font-label-sm text-label-sm">Sản Phẩm</span></a>
+<a class="flex flex-col items-center gap-2 px-10 py-3 rounded-2xl text-cool-gray-muted hover:bg-black/5 transition-all" href="#"><span class="material-symbols-outlined">analytics</span><span class="font-label-sm text-label-sm">Báo Cáo</span></a>
+<a class="flex flex-col items-center gap-2 px-10 py-3 rounded-2xl text-cool-gray-muted hover:bg-black/5 transition-all" href="#"><span class="material-symbols-outlined">settings</span><span class="font-label-sm text-label-sm">Cài Đặt</span></a>
+</nav>
+<style>
+  @keyframes voice-wave {
+    0%, 100% { height: 20%; }
+    50% { height: 100%; }
+  }
+  </style>
+<script>
+  function switchPayment(type) {
+    const cashBtn = document.getElementById('btn-cash');
+    const transferBtn = document.getElementById('btn-transfer');
+    const cashCalc = document.getElementById('cash-calculations');
+    
+    if (type === 'transfer') {
+      cashBtn.classList.remove('bg-primary', 'text-on-primary', 'shadow-xl');
+      cashBtn.classList.add('bg-white/5', 'text-on-primary', 'border-2', 'border-white/20');
+      
+      transferBtn.classList.add('bg-primary', 'text-on-primary', 'shadow-xl');
+      transferBtn.classList.remove('bg-white/5', 'border-2', 'border-white/20');
+      
+      cashCalc.style.opacity = '0';
+      cashCalc.style.maxHeight = '0';
+      cashCalc.style.overflow = 'hidden';
+      cashCalc.style.marginBottom = '0';
+    } else {
+      transferBtn.classList.remove('bg-primary', 'text-on-primary', 'shadow-xl');
+      transferBtn.classList.add('bg-white/5', 'text-on-primary', 'border-2', 'border-white/20');
+      
+      cashBtn.classList.add('bg-primary', 'text-on-primary', 'shadow-xl');
+      cashBtn.classList.remove('bg-white/5', 'border-2', 'border-white/20');
+      
+      cashCalc.style.opacity = '1';
+      cashCalc.style.maxHeight = '250px';
+      cashCalc.style.marginBottom = '2rem';
+    }
+  }
+
+  // Visual mic interaction
+  const mic = document.getElementById('mic-trigger');
+  let isListening = true;
+
+  mic.addEventListener('click', () => {
+    isListening = !isListening;
+    if(isListening) {
+      mic.querySelector('.material-symbols-outlined').innerText = 'mic';
+      mic.classList.add('bg-primary');
+      mic.classList.remove('bg-error-crimson');
+      mic.style.boxShadow = "0 0 60px rgba(0,108,73,0.5)";
+    } else {
+      mic.querySelector('.material-symbols-outlined').innerText = 'mic_off';
+      mic.classList.remove('bg-primary');
+      mic.classList.add('bg-error-crimson');
+      mic.style.boxShadow = "0 0 60px rgba(239,68,68,0.5)";
+    }
+  });
+  </script>
+
+
+
+
+
+
+</body></html>

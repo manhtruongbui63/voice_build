@@ -1,0 +1,101 @@
+<!DOCTYPE html><html lang="vi" style=""><head><meta charset="utf-8"><meta content="width=device-width, initial-scale=1.0" name="viewport"><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config={theme:{extend:{"colors":{"tertiary":"#0053db","on-primary-fixed-variant":"#005236","on-tertiary-fixed":"#00174b","on-secondary-container":"#5c647a","warning-amber":"#F59E0B","surface-dim":"#d4dcd5","emerald-soft":"#D1FAE5","surface-container-low":"#eef6ee","outline-variant":"#bbcabf","surface-tint":"#006c49","on-secondary":"#ffffff","error":"#ba1a1a","inverse-primary":"#4edea3","surface-container-lowest":"#ffffff","primary-container":"#10b981","background":"#f4fbf4","surface-container-highest":"#dde4dd","on-tertiary":"#ffffff","on-primary-container":"#00422b","slate-bg":"#F8FAFC","secondary-fixed":"#dae2fd","on-secondary-fixed-variant":"#3f465c","emerald-active":"#059669","tertiary-fixed":"#dbe1ff","on-surface-variant":"#3c4a42","on-error":"#ffffff","surface":"#f4fbf4","surface-container":"#e8f0e9","on-surface":"#161d19","secondary-container":"#dae2fd","secondary":"#565e74","surface-variant":"#dde4dd","on-secondary-fixed":"#131b2e","on-tertiary-container":"#00328b","error-container":"#ffdad6","primary":"#006c49","outline":"#6c7a71","on-primary-fixed":"#002113","error-crimson":"#EF4444","tertiary-container":"#7f9fff","tertiary-fixed-dim":"#b4c5ff","surface-bright":"#f4fbf4","mint":"#34D399","on-error-container":"#93000a","warning-surface":"#FEF3C7","surface-container-high":"#e3eae3","cool-gray-muted":"#64748B","primary-fixed-dim":"#4edea3","primary-fixed":"#6ffbbe","on-background":"#161d19","on-tertiary-fixed-variant":"#003ea8","inverse-on-surface":"#ebf3eb","on-primary":"#ffffff","secondary-fixed-dim":"#bec6e0","inverse-surface":"#2b322d"},"borderRadius":{"DEFAULT":"0.25rem","lg":"0.5rem","xl":"0.75rem","full":"9999px"},"spacing":{"stack-sm":"0.5rem","stack-md":"1rem","margin-tablet":"2rem","gutter":"1rem","margin-mobile":"1rem","stack-lg":"1.5rem"},"fontFamily":{"label-sm":["Inter"],"headline-lg":["Plus Jakarta Sans"],"headline-md":["Plus Jakarta Sans"],"body-md":["Inter"],"body-lg":["Inter"],"label-md":["Inter"],"body-sm":["Inter"],"headline-lg-mobile":["Plus Jakarta Sans"]},"fontSize":{"label-sm":["12px",{"lineHeight":"16px","fontWeight":"500"}],"headline-lg":["32px",{"lineHeight":"40px","fontWeight":"700"}],"headline-md":["20px",{"lineHeight":"28px","fontWeight":"600"}],"body-md":["16px",{"lineHeight":"24px","fontWeight":"400"}],"body-lg":["18px",{"lineHeight":"28px","fontWeight":"400"}],"label-md":["14px",{"lineHeight":"20px","letterSpacing":"0.02em","fontWeight":"600"}],"body-sm":["14px",{"lineHeight":"20px","fontWeight":"400"}],"headline-lg-mobile":["24px",{"lineHeight":"32px","fontWeight":"700"}]}}}}</script><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&amp;family=Plus+Jakarta+Sans:wght@100..900&amp;display=swap" rel="stylesheet"></head><body class="bg-background font-body-md text-on-background overflow-x-hidden"><header class="fixed top-0 left-0 right-0 h-16 bg-surface-container-lowest/90 backdrop-blur-md z-50 shadow-[0_1px_8px_rgba(0,0,0,0.04)] flex items-center justify-between px-6"><div class="flex items-center gap-3"><div class="w-10 h-10 bg-primary rounded-xl flex items-center justify-center shadow-lg shadow-primary/20"><span class="material-symbols-outlined text-on-primary">record_voice_over</span></div><span class="font-headline-md text-headline-md tracking-tight text-primary">VoiceBill</span></div><div class="flex items-center gap-4"><button class="w-10 h-10 flex items-center justify-center rounded-full text-on-surface-variant hover:bg-surface-container-high transition-colors"><span class="material-symbols-outlined">notifications</span></button><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></header><main class="w-full pt-16 pb-24 min-h-screen"><div class="flex flex-col w-full px-6 py-8 md:px-12 md:py-12 bg-slate-bg">
+<!-- Header Section: Integrated Search & Action -->
+<div class="flex flex-col md:flex-row items-center gap-6 mb-12">
+<div class="relative flex-grow w-full group">
+<div class="absolute inset-y-0 left-6 flex items-center pointer-events-none">
+<span class="material-symbols-outlined text-cool-gray-muted transition-colors group-focus-within:text-primary">search</span>
+</div>
+<input class="w-full h-16 pl-16 pr-6 bg-surface-container-lowest rounded-full shadow-md focus:outline-none focus:shadow-lg focus:shadow-primary/10 transition-all font-body-lg text-on-surface border-none text-lg" placeholder="Tìm sản phẩm hoặc từ viết tắt..." type="text">
+</div>
+<button class="flex items-center gap-3 bg-primary text-on-primary px-8 h-16 rounded-full shadow-lg shadow-primary/25 hover:scale-[1.02] active:scale-95 transition-all shrink-0">
+<span class="material-symbols-outlined text-[28px]">add_circle</span>
+<span class="font-headline-md text-headline-md">Thêm sản phẩm</span>
+</button>
+</div>
+<!-- Product Grid: 3-Column Layout -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+<!-- Card 1: Gạo ST25 -->
+<div class="group bg-surface-container-lowest rounded-[16px] shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between min-h-[280px] p-6" style="transform: translateY(0px);">
+<div class="space-y-4"><div class="flex justify-center mb-4 bg-white rounded-lg p-2 overflow-hidden h-40"><img alt="Gạo ST25" class="h-full object-contain" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDOOuaDLoKadBZoDHro_aD0CcyUF4fQPc-I3ixYZeBy3n5ZbCiRK6u_Hbp_tqVFBQJWQdHm6a9WSrTBIyKTAUZiPtaOmvsLcLXz6JCmtKRq1y2QRyGMdoJmkRHR9IVuDsyW2QMsdONzxDOHDfBlrwulfaZQoGjINWbbh-DFGMqv7X9XiwjtXvYiZ01bC_cqfrJXfiG0ziTwQrADY00ztP2hiUpIYf9rOPQluMj5BqvyMQDAvzLqKN7e"></div>
+<div class="flex justify-between items-start">
+<h3 class="font-headline-lg text-on-surface leading-tight text-headline-md">Gạo ST25 (Túi 5kg)</h3>
+</div>
+</div>
+<div class="space-y-6 mt-4"><div class="text-[32px] font-bold text-primary-container leading-none text-right">165,000 <span class="text-lg font-medium text-cool-gray-muted">đ</span></div><div class="flex items-center gap-3 pt-4 justify-center"><button class="flex-1 flex items-center justify-center gap-2 h-14 bg-tertiary/10 text-tertiary rounded-xl font-label-md hover:bg-tertiary hover:text-on-tertiary transition-colors"><span class="material-symbols-outlined text-[20px]">edit</span><span class="">Sửa</span></button><button class="flex-1 flex items-center justify-center gap-2 h-14 bg-error-container/10 text-error rounded-xl font-label-md hover:bg-error hover:text-on-error transition-colors"><span class="material-symbols-outlined text-[20px]">delete</span><span class="">Xóa</span></button></div></div>
+</div>
+<!-- Card 2: Nước mắm -->
+<div class="group bg-surface-container-lowest rounded-[16px] shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between min-h-[280px] p-6" style="transform: translateY(0px);">
+<div class="space-y-4"><div class="flex justify-center mb-4 bg-white rounded-lg p-2 overflow-hidden h-40"><img alt="Nước mắm cá cơm" class="h-full object-contain" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCyhBeNrQFGb_V37wB6YP2AFXq0PJWLULpEnQvks9KkWDSbSlmumC_tY-WKTQrNd0rZrON6NCHzoJHHNkUaoSjHoXPHpIDWoT8_Aea4LdSHy9YY4bIQdjtlKit9HJDegAcAStDR1iBvtYUwovuJPUz9iYdWYgVuV3aka3E9qCtaGxtavR6l-MCmsAygmrtFu5z8mfWYqy4boJ0t3InwFrCB2W_6QSXbuHp5rzzcyT_a9dKTJmJQjASO"></div>
+<div class="flex justify-between items-start">
+<h3 class="font-headline-lg text-on-surface leading-tight text-headline-md">Nước mắm cá cơm</h3>
+</div>
+</div>
+<div class="space-y-6 mt-4"><div class="text-[32px] font-bold text-primary-container leading-none text-right">45,000 <span class="text-lg font-medium text-cool-gray-muted">đ</span></div><div class="flex items-center gap-3 pt-4 justify-center"><button class="flex-1 flex items-center justify-center gap-2 h-14 bg-tertiary/10 text-tertiary rounded-xl font-label-md hover:bg-tertiary hover:text-on-tertiary transition-colors"><span class="material-symbols-outlined text-[20px]">edit</span><span class="">Sửa</span></button><button class="flex-1 flex items-center justify-center gap-2 h-14 bg-error-container/10 text-error rounded-xl font-label-md hover:bg-error hover:text-on-error transition-colors"><span class="material-symbols-outlined text-[20px]">delete</span><span class="">Xóa</span></button></div></div>
+</div>
+<!-- Card 3: Dầu ăn -->
+<div class="group bg-surface-container-lowest rounded-[16px] shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between min-h-[280px] p-6">
+<div class="space-y-4"><div class="flex justify-center mb-4 bg-white rounded-lg p-2 overflow-hidden h-40"><img alt="Dầu ăn Meizan" class="h-full object-contain" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBo83Xy2E3aY0XmsfRYkgXeElY1DQI_Xt3M-TMqwPuvycz_ajYU-1CbAyKU8ZWdsc_rO-EU5a658MjR0Wend2k9KlEdBd8-R7Why99Q5rnMp1TEFPKn8iqEFzMxdR63SByf_1EOfC6fqFSmXwz0ev129CSjcK75WAlQDZ_2xwbLGohw1CMoljymimgkjFWnaZ_RhZ2F53FJvqCk7k8wjtIaVEp-MBmKPVZQQn_ajpv3_71ilrjtnQ2M"></div>
+<div class="flex justify-between items-start">
+<h3 class="font-headline-lg text-on-surface leading-tight text-headline-md">Dầu ăn Meizan (1L)</h3>
+</div>
+</div>
+<div class="space-y-6 mt-4"><div class="text-[32px] font-bold text-primary-container leading-none text-right">52,000 <span class="text-lg font-medium text-cool-gray-muted">đ</span></div><div class="flex items-center gap-3 pt-4 justify-center"><button class="flex-1 flex items-center justify-center gap-2 h-14 bg-tertiary/10 text-tertiary rounded-xl font-label-md hover:bg-tertiary hover:text-on-tertiary transition-colors"><span class="material-symbols-outlined text-[20px]">edit</span><span class="">Sửa</span></button><button class="flex-1 flex items-center justify-center gap-2 h-14 bg-error-container/10 text-error rounded-xl font-label-md hover:bg-error hover:text-on-error transition-colors"><span class="material-symbols-outlined text-[20px]">delete</span><span class="">Xóa</span></button></div></div>
+</div>
+<!-- Card 4: Sữa đặc -->
+<div class="group bg-surface-container-lowest rounded-[16px] shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between min-h-[280px] p-6">
+<div class="space-y-4"><div class="flex justify-center mb-4 bg-white rounded-lg p-2 overflow-hidden h-40"><img alt="Sữa đặc Ngôi Sao P.N" class="h-full object-contain" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBDh_qo-7-vYR75_V5coxRHumf-ILdf_gJ9mUiVzQWF5U9KRxd47Cu0453MUsOwQaNOGvXQ576XIH8qfMtmc_gVU2LozQ9NANYs8wjQtGAeCg8dnQWMTKjShkOgEAfXDTU-z8dwDlvh0Zjj2lKtjQb22yOlPtFHZxIAbltWY-uzELgOaUvze055H4jH9TOduaON81zlnWc1d_HWzOutFd2w7M-U7sQzv4qx4xQronAIdtDetE_jflCK"></div>
+<div class="flex justify-between items-start">
+<h3 class="font-headline-lg text-on-surface leading-tight text-headline-md">Sữa đặc Ngôi Sao P.N</h3>
+</div>
+</div>
+<div class="space-y-6 mt-4"><div class="text-[32px] font-bold text-primary-container leading-none text-right">18,500 <span class="text-lg font-medium text-cool-gray-muted">đ</span></div><div class="flex items-center gap-3 pt-4 justify-center"><button class="flex-1 flex items-center justify-center gap-2 h-14 bg-tertiary/10 text-tertiary rounded-xl font-label-md hover:bg-tertiary hover:text-on-tertiary transition-colors"><span class="material-symbols-outlined text-[20px]">edit</span><span class="">Sửa</span></button><button class="flex-1 flex items-center justify-center gap-2 h-14 bg-error-container/10 text-error rounded-xl font-label-md hover:bg-error hover:text-on-error transition-colors"><span class="material-symbols-outlined text-[20px]">delete</span><span class="">Xóa</span></button></div></div>
+</div>
+<!-- Decorative Card: Analytics Integration -->
+<div class="relative overflow-hidden group bg-gradient-to-br from-primary to-emerald-active rounded-[16px] shadow-xl flex flex-col justify-center items-center text-center text-on-primary min-h-[280px] p-6">
+<div class="absolute top-0 right-0 p-4 opacity-10">
+<span class="material-symbols-outlined text-[120px]">insights</span>
+</div>
+<div class="relative z-10 space-y-4">
+<h3 class="font-headline-lg text-headline-md">Quản lý hiệu quả</h3>
+<p class="font-body-md text-body-md opacity-90 max-w-[200px]">Cập nhật giá bán nhanh chóng bằng giọng nói AI</p>
+<div class="pt-4">
+<span class="material-symbols-outlined text-[48px] animate-pulse">keyboard_voice</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Background Decorative Element -->
+<div class="fixed -bottom-32 -left-32 w-96 h-96 bg-primary/5 rounded-full blur-[100px] pointer-events-none"></div>
+<div class="fixed -top-32 -right-32 w-96 h-96 bg-tertiary/5 rounded-full blur-[100px] pointer-events-none"></div>
+</div>
+<script>
+    // Subtle interactions for the product cards
+    document.querySelectorAll('.group').forEach(card => {
+        card.addEventListener('mouseenter', () => {
+            card.style.transform = 'translateY(-4px)';
+        });
+        card.addEventListener('mouseleave', () => {
+            card.style.transform = 'translateY(0)';
+        });
+    });
+
+    // Handle search bar focus
+    const searchInput = document.querySelector('input');
+    searchInput.addEventListener('focus', () => {
+        searchInput.parentElement.classList.add('scale-[1.01]');
+    });
+    searchInput.addEventListener('blur', () => {
+        searchInput.parentElement.classList.remove('scale-[1.01]');
+    });
+</script></main><nav class="fixed bottom-6 left-1/2 -translate-x-1/2 w-[90%] max-w-2xl bg-inverse-surface/90 backdrop-blur-xl h-20 rounded-full shadow-xl z-50 flex items-center justify-around px-8 border border-white/10" data-active-classes="bg-primary-container text-on-primary-container shadow-lg shadow-primary/20 scale-105"><a class="flex flex-col items-center justify-center gap-1 px-5 py-2 rounded-full transition-all duration-300 text-inverse-on-surface/60 hover:text-inverse-on-surface" data-path="ban-hang" href="#"><span class="material-symbols-outlined">mic</span><span class="font-label-sm text-label-sm">Bán Hàng</span></a><a class="flex flex-col items-center justify-center gap-1 px-6 py-2 bg-primary-container text-on-primary shadow-lg shadow-primary/20 scale-105 transition-all duration-300" data-path="san-pham" href="#" style="border-radius: 0.875rem;"><span class="material-symbols-outlined">inventory_2</span><span class="font-label-sm text-label-sm">Sản Phẩm</span></a><a class="flex flex-col items-center justify-center gap-1 px-5 py-2 rounded-full transition-all duration-300 text-inverse-on-surface/60 hover:text-inverse-on-surface" data-path="bao-cao" href="#"><span class="material-symbols-outlined">analytics</span><span class="font-label-sm text-label-sm">Báo Cáo</span></a><a class="flex flex-col items-center justify-center gap-1 px-5 py-2 rounded-full transition-all duration-300 text-inverse-on-surface/60 hover:text-inverse-on-surface" data-path="cai-dat" href="#"><span class="material-symbols-outlined">settings</span><span class="font-label-sm text-label-sm">Cài Đặt</span></a></nav>
+
+
+
+
+
+
+
+
+</body></html>

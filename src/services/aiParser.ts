@@ -3,6 +3,7 @@ import {
   generateGeminiJson,
   GeminiJsonGenerator,
 } from './geminiClient';
+import { getDefaultPaymentMethod } from './geminiSettingsService';
 
 const INVOICE_RESPONSE_SCHEMA = {
   type: 'object',
@@ -32,6 +33,7 @@ const INVOICE_RESPONSE_SCHEMA = {
       type: 'array',
       items: { type: 'string' },
     },
+    payment_method: { type: 'string' },
   },
   required: ['matched_items', 'unmatched_text'],
   additionalProperties: false,
@@ -64,7 +66,18 @@ QUY TẮC BẮT BUỘC:
 4. CHỈ SỐ TIN CẬY (CONFIDENCE):
    - Trả về 'confidence' từ 0.0 đến 1.0 cho mỗi sản phẩm.
    - Nếu từ đọc bị lệch âm nhẹ (ví dụ "Bắc Hướng" -> "Bắc Hương"), gán confidence = 0.6.
-5. Trả về đúng định dạng JSON Schema yêu cầu.`;
+6. PHƯƠNG THỨC THANH TOÁN (PAYMENT METHOD):
+   - Nếu khách nói "tiền mặt", trả về payment_method = "tiền mặt".
+   - Nếu khách nói "chuyển khoản", trả về payment_method = "chuyển khoản".
+   - Nếu không nhắc gì đến thanh toán, KHÔNG TRẢ VỀ trường này (hoặc trả về null).
+7. Trả về đúng định dạng JSON Schema yêu cầu.
+
+VÍ DỤ MẪU (FEW-SHOT EXAMPLES):
+- Giọng nói: "cho 2 cân gạo ST"
+  JSON: {"matched_items": [{"product_id": 1, "product_name": "Gạo ST25", "quantity": 2, "unit": "kg", "confidence": 0.9}], "unmatched_text": []}
+
+- Giọng nói: "lấy 1 túi Bắc Hương thanh toán tiền mặt"
+  JSON: {"matched_items": [{"product_id": 2, "product_name": "Bắc Hương", "quantity": 1, "unit": "túi", "confidence": 0.95}], "payment_method": "tiền mặt", "unmatched_text": []}`;
 };
 
 type ParsedMatchedItem = AIParsingResult['matched_items'][number];
@@ -107,6 +120,7 @@ export const parseAIResponse = (responseText: string): AIParsingResult => {
 
     return {
       matched_items: parsed.matched_items,
+      payment_method: parsed.payment_method as any,
       unmatched_text: (parsed.unmatched_text as string[] | undefined) ?? [],
     };
   } catch {
@@ -145,6 +159,7 @@ export const parseVoiceTranscript = async (
 
   return {
     matched_items: matchedItems,
+    payment_method: parsed.payment_method || (await getDefaultPaymentMethod()),
     unmatched_text: parsed.unmatched_text,
   };
 };

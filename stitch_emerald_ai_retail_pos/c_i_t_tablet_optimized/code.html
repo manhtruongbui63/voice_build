@@ -1,0 +1,382 @@
+<!DOCTYPE html><html lang="vi" style=""><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<style>
+    @layer base {
+      html, body { margin: 0; padding: 0; }
+      body { overscroll-behavior: none; -webkit-font-smoothing: antialiased; }
+      main > :first-child { margin-top: 0 !important; }
+      main > :last-child { margin-bottom: 0 !important; }
+    }
+    ::-webkit-scrollbar { display: none; }
+    @font-face {
+      font-family: 'Plus Jakarta Sans';
+      src: url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+    }
+    @font-face {
+      font-family: 'Inter';
+      src: url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+    }
+  </style>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      theme: {
+        extend: {
+          "colors": {
+            "tertiary-container": "#7f9fff",
+            "primary-container": "#10b981",
+            "warning-surface": "#FEF3C7",
+            "surface-container-highest": "#dde4dd",
+            "emerald-soft": "#D1FAE5",
+            "warning-amber": "#F59E0B",
+            "on-primary-fixed": "#002113",
+            "on-primary": "#ffffff",
+            "secondary": "#565e74",
+            "inverse-surface": "#2b322d",
+            "on-error": "#ffffff",
+            "on-background": "#161d19",
+            "primary-fixed": "#6ffbbe",
+            "on-secondary": "#ffffff",
+            "secondary-container": "#dae2fd",
+            "surface-bright": "#f4fbf4",
+            "inverse-on-surface": "#ebf3eb",
+            "surface-tint": "#006c49",
+            "tertiary-fixed-dim": "#b4c5ff",
+            "surface-container-lowest": "#ffffff",
+            "surface-dim": "#d4dcd5",
+            "surface-container": "#e8f0e9",
+            "on-tertiary-container": "#00328b",
+            "on-secondary-fixed": "#131b2e",
+            "tertiary": "#0053db",
+            "primary": "#006c49",
+            "on-secondary-container": "#5c647a",
+            "slate-bg": "#F8FAFC",
+            "error-crimson": "#EF4444",
+            "secondary-fixed-dim": "#bec6e0",
+            "outline": "#6c7a71",
+            "mint": "#34D399",
+            "emerald-active": "#059669",
+            "on-surface": "#161d19",
+            "on-error-container": "#93000a",
+            "primary-fixed-dim": "#4edea3",
+            "on-primary-container": "#00422b",
+            "error": "#ba1a1a",
+            "error-container": "#ffdad6",
+            "outline-variant": "#bbcabf",
+            "cool-gray-muted": "#64748B",
+            "secondary-fixed": "#dae2fd",
+            "on-tertiary-fixed-variant": "#003ea8",
+            "surface-variant": "#dde4dd",
+            "surface-container-low": "#eef6ee",
+            "on-primary-fixed-variant": "#005236",
+            "surface": "#f4fbf4",
+            "surface-container-high": "#e3eae3",
+            "inverse-primary": "#4edea3",
+            "tertiary-fixed": "#dbe1ff",
+            "on-tertiary": "#ffffff",
+            "on-secondary-fixed-variant": "#3f465c",
+            "on-surface-variant": "#3c4a42",
+            "background": "#f4fbf4",
+            "on-tertiary-fixed": "#00174b"
+          },
+          "borderRadius": {
+            "DEFAULT": "0.5rem",
+            "lg": "1rem",
+            "xl": "1.5rem",
+            "2xl": "2rem",
+            "full": "9999px"
+          },
+          "spacing": {
+            "margin-tablet": "3rem",
+            "stack-sm": "1rem",
+            "stack-md": "1.5rem",
+            "gutter": "1.5rem",
+            "stack-lg": "2.5rem",
+            "margin-mobile": "1.5rem"
+          },
+          "fontFamily": {
+            "label-sm": ["Inter"],
+            "label-md": ["Inter"],
+            "headline-lg-mobile": ["Plus Jakarta Sans"],
+            "headline-md": ["Plus Jakarta Sans"],
+            "body-lg": ["Inter"],
+            "body-sm": ["Inter"],
+            "headline-lg": ["Plus Jakarta Sans"],
+            "body-md": ["Inter"]
+          },
+          "fontSize": {
+            "label-sm": ["14px", {"lineHeight": "20px", "fontWeight": "500"}],
+            "label-md": ["18px", {"lineHeight": "24px", "letterSpacing": "0.02em", "fontWeight": "600"}],
+            "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "700"}],
+            "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+            "body-lg": ["22px", {"lineHeight": "32px", "fontWeight": "400"}],
+            "body-sm": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+            "headline-lg": ["40px", {"lineHeight": "48px", "fontWeight": "700"}],
+            "body-md": ["18px", {"lineHeight": "28px", "fontWeight": "400"}]
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-slate-bg font-body-md text-on-surface">
+<!-- Optimized Bottom Navigation Bar -->
+<nav class="fixed bottom-6 left-1/2 -translate-x-1/2 bg-inverse-surface/90 backdrop-blur-xl border border-white/10 px-10 py-4 flex items-center gap-12 z-50 rounded-2xl shadow-2xl">
+  <a class="flex flex-col items-center gap-1 px-8 py-3 rounded-xl text-white/60 hover:text-white hover:bg-white/10 transition-all" data-path="ban-hang" href="#">
+    <span class="material-symbols-outlined text-2xl">mic</span>
+    <span class="text-xs font-label-sm">Bán Hàng</span>
+  </a>
+  <a class="flex flex-col items-center gap-1 px-8 py-3 rounded-xl text-white/60 hover:text-white hover:bg-white/10 transition-all" data-path="san-pham" href="#">
+    <span class="material-symbols-outlined text-2xl">inventory_2</span>
+    <span class="text-xs font-label-sm">Sản Phẩm</span>
+  </a>
+  <a class="flex flex-col items-center gap-1 px-8 py-3 rounded-xl text-white/60 hover:text-white hover:bg-white/10 transition-all" data-path="bao-cao" href="#">
+    <span class="material-symbols-outlined text-2xl">bar_chart</span>
+    <span class="text-xs font-label-sm">Báo Cáo</span>
+  </a>
+  <a class="flex flex-col items-center gap-1 px-8 py-3 rounded-[0.875rem] bg-primary-container text-on-primary shadow-lg shadow-primary-container/20 transition-all" data-path="cai-dat" href="#">
+    <span class="material-symbols-outlined text-2xl">settings</span>
+    <span class="text-xs font-label-sm">Cài Đặt</span>
+  </a>
+</nav>
+<div class="w-full">
+<!-- Header with increased height and larger elements -->
+<header class="fixed top-0 left-0 right-0 h-24 bg-surface/90 backdrop-blur-2xl shadow-[0_1px_10px_rgba(0,0,0,0.05)] z-40 px-margin-tablet flex items-center justify-between">
+<div class="flex items-center gap-6">
+<img alt="VoiceBill Logo" class="h-10 w-auto object-contain" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDTux6RmjBTpzEGYNvYOeOtjmNB5zXDmtb_3pk-qwabgOxshrq7gw805Mlh_kudR0ePv06L84CmSKwXKJgDCgHfTj5-4AjxQoY3x3H-z4WUQzc5UPCX3c2AwDDo_jJXxzBqRoRYPsc3986UZqzRhsIebLUZvAer9cFxnGVGxL8i1G8JgNXgzS0eX5SYlHyaMVXjvsvZQaVUUPN31mHPo51FoA-f0fscvji7XcXCXjZiA0HFO_0iejP8">
+<div class="flex items-center gap-4 border-l-2 border-outline-variant pl-6">
+<span class="material-symbols-outlined text-primary text-3xl">store</span>
+<span class="font-headline-md text-on-surface text-xl md:text-2xl">Cửa hàng Trung Tâm</span>
+</div>
+</div>
+<div class="flex items-center gap-6">
+<div class="text-right hidden md:block">
+<div class="font-label-md text-on-surface text-lg">Quản lý Ca</div>
+<div class="text-xs uppercase tracking-widest text-emerald-active font-bold">Đang hoạt động</div>
+</div>
+<img alt="Profile" class="w-14 h-14 rounded-full border-4 border-primary-container object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBisUyuUg1nmuYRCpzXPymHYj4pwfVPQR17GUIsvCf5S7HGtsW15rQdpBeABaak1T4QZ58TLxfuKU_uKFr2tl-0c3lRFksX2jhov9AmDsCoxaV-y8mp8FHyUrbtn18icDNSJreWydZxh-XZhTILN7wPuIY2YdgZao8dVsUpyKN7YlTd9N9cHv21MLCG0cm8TA4kSWoxrSLgzomKaLB-ngDFVENt7jfXFUWQuiA5LK0S5siUzgrLTKHZ">
+</div>
+</header>
+<main class="relative pt-24 pb-32 min-h-screen">
+<div class="max-w-7xl mx-auto flex flex-col w-full px-margin-tablet py-stack-lg">
+<!-- Header Section -->
+<div class="flex flex-col gap-4 mb-stack-lg">
+<div class="flex items-center gap-2 text-cool-gray-muted font-label-md">
+<span class="">Cấu hình hệ thống</span>
+<span class="material-symbols-outlined text-lg">chevron_right</span>
+<span class="text-primary font-bold">Cài đặt chung</span>
+</div>
+<div class="flex flex-col md:flex-row md:justify-between md:items-end gap-6">
+<div>
+<h1 class="font-headline-lg text-on-surface leading-tight">Thiết lập cửa hàng</h1>
+<p class="font-body-lg text-on-surface-variant mt-2">Quản lý kết nối AI, thanh toán và thiết bị ngoại vi của bạn.</p>
+</div>
+<button class="bg-primary hover:bg-emerald-active text-on-primary px-10 py-5 rounded-2xl font-label-md transition-all flex items-center justify-center gap-3 shadow-xl active:scale-95 whitespace-nowrap text-xl">
+<span class="material-symbols-outlined text-2xl">save</span>
+              Lưu thay đổi
+            </button>
+</div>
+</div>
+<!-- Main Settings Grid Optimized for Tablet -->
+<div class="grid grid-cols-12 gap-8">
+<!-- Left Column: Infrastructure & Security -->
+<div class="col-span-12 lg:col-span-5 space-y-8">
+<!-- Gemini AI API Key Card -->
+<div class="bg-surface-container-lowest rounded-2xl p-10 shadow-lg border border-surface-variant/40 relative overflow-hidden group">
+<div class="absolute top-0 right-0 p-12 opacity-5 group-hover:opacity-10 transition-opacity">
+<span class="material-symbols-outlined text-[120px]">neurology</span>
+</div>
+<div class="flex items-center gap-5 mb-10">
+<div class="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-4xl">api</span>
+</div>
+<div>
+<h2 class="font-headline-md text-on-surface text-2xl">Cấu hình Gemini AI</h2>
+<p class="font-body-md text-cool-gray-muted">Trí tuệ nhân tạo xử lý giọng nói</p>
+</div>
+</div>
+<div class="space-y-6 relative z-10">
+<div class="flex flex-col gap-3">
+<label class="font-label-md text-on-surface text-lg ml-1">Google Gemini API Key</label>
+<div class="relative">
+<input class="w-full bg-slate-bg border-2 border-surface-variant/50 rounded-2xl px-6 py-6 font-mono text-xl text-on-surface focus:ring-4 ring-primary/20 transition-all pr-16" id="api-key-input" readonly="" type="password" value="AIzaSyA_xK8L0mZqR3vP9wJ2eT1yU4iO5oP6">
+<button class="absolute right-5 top-1/2 -translate-y-1/2 text-cool-gray-muted hover:text-primary transition-colors p-2" onclick="toggleVisibility()">
+<span class="material-symbols-outlined text-3xl" id="eye-icon">visibility</span>
+</button>
+</div>
+</div>
+<div class="flex items-center justify-between bg-emerald-soft/40 p-6 rounded-2xl border border-primary/20">
+<div class="flex items-center gap-3 text-primary font-bold text-lg">
+<span class="material-symbols-outlined text-2xl">check_circle</span>
+<span class="">Mã API hợp lệ</span>
+</div>
+<span class="font-label-md text-on-primary-fixed-variant/80">Trễ: 240ms</span>
+</div>
+<div class="pt-6 border-t border-surface-variant/50 flex gap-4">
+<button class="flex-1 font-label-md py-4 text-primary border-2 border-primary rounded-xl hover:bg-primary/5 transition-colors text-lg">Kiểm tra kết nối</button>
+<button class="flex-1 font-label-md py-4 text-on-surface-variant bg-surface-variant/60 rounded-xl hover:bg-surface-variant transition-colors text-lg">Đổi mã mới</button>
+</div>
+</div>
+</div>
+<!-- Security Card -->
+<div class="bg-inverse-surface text-on-primary rounded-2xl p-10 shadow-2xl relative overflow-hidden">
+<div class="relative z-10">
+<h3 class="font-headline-md mb-4 text-2xl">Bảo mật dữ liệu tối đa</h3>
+<p class="font-body-md opacity-90 mb-8 leading-relaxed text-lg">Mọi dữ liệu giọng nói được mã hóa đầu cuối AES-256. Chúng tôi không lưu giữ bản ghi sau khi chuyển đổi thành văn bản để đảm bảo quyền riêng tư của khách hàng.</p>
+<div class="flex items-center gap-6">
+<div class="flex -space-x-3">
+<div class="w-12 h-12 rounded-full border-4 border-inverse-surface bg-primary flex items-center justify-center shadow-lg">
+<span class="material-symbols-outlined text-xl">shield</span>
+</div>
+<div class="w-12 h-12 rounded-full border-4 border-inverse-surface bg-blue-500 flex items-center justify-center shadow-lg">
+<span class="material-symbols-outlined text-xl">lock</span>
+</div>
+</div>
+<span class="font-label-md text-lg font-bold">Tiêu chuẩn bảo mật AES-256</span>
+</div>
+</div>
+<div class="absolute -bottom-10 -right-10 w-48 h-48 bg-primary/20 blur-[80px] rounded-full"></div>
+</div>
+</div>
+<!-- Right Column: Operational Settings -->
+<div class="col-span-12 lg:col-span-7 space-y-8">
+<div class="bg-surface-container-lowest rounded-2xl shadow-lg border border-surface-variant/40 overflow-hidden">
+<div class="p-10 border-b border-surface-variant/40 bg-surface-container-low/30">
+<h2 class="font-headline-md text-on-surface text-2xl">Vận hành &amp; Thanh toán</h2>
+</div>
+<div class="p-10 space-y-12">
+<!-- Payment Toggles -->
+<div class="space-y-6">
+<h3 class="font-label-md text-cool-gray-muted uppercase tracking-[0.1em] text-sm font-bold">Hình thức thanh toán mặc định</h3>
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+<label class="relative flex items-center justify-between p-8 rounded-2xl border-4 border-primary bg-primary/5 cursor-pointer transition-all shadow-sm">
+<div class="flex items-center gap-5">
+<span class="material-symbols-outlined text-4xl text-primary">payments</span>
+<span class="font-headline-md text-on-surface text-xl">Tiền mặt</span>
+</div>
+<input checked="" class="accent-primary w-8 h-8" name="payment" type="radio">
+</label>
+<label class="relative flex items-center justify-between p-8 rounded-2xl border-2 border-surface-variant hover:border-primary/50 cursor-pointer transition-all">
+<div class="flex items-center gap-5">
+<span class="material-symbols-outlined text-4xl text-on-surface-variant">account_balance</span>
+<span class="font-headline-md text-on-surface text-xl">Chuyển khoản</span>
+</div>
+<input class="accent-primary w-8 h-8" name="payment" type="radio">
+</label>
+</div>
+</div>
+<!-- Store Info Inputs -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+<div class="flex flex-col gap-3">
+<label class="font-label-md text-on-surface text-lg font-bold">Tên cửa hàng trên hóa đơn</label>
+<input class="w-full bg-slate-bg border-2 border-surface-variant/50 rounded-2xl px-6 py-5 font-body-md text-xl focus:ring-4 ring-primary/20" type="text" value="Cửa hàng Trung Tâm">
+</div>
+<div class="flex flex-col gap-3">
+<label class="font-label-md text-on-surface text-lg font-bold">Mã số thuế (Nếu có)</label>
+<input class="w-full bg-slate-bg border-2 border-surface-variant/50 rounded-2xl px-6 py-5 font-body-md text-xl focus:ring-4 ring-primary/20" placeholder="0312xxxxxx" type="text">
+</div>
+</div>
+<!-- Printer Settings Section -->
+<div class="space-y-6 pt-6">
+<div class="flex items-center justify-between">
+<h3 class="font-label-md text-cool-gray-muted uppercase tracking-[0.1em] text-sm font-bold">Kết nối Máy in hóa đơn (POS)</h3>
+<span class="px-4 py-2 bg-warning-surface text-warning-amber text-xs font-bold rounded-lg uppercase tracking-wider">Chưa kết nối</span>
+</div>
+<div class="bg-slate-bg rounded-3xl p-10 flex flex-col xl:flex-row items-center gap-10 border-2 border-dashed border-surface-variant/60">
+<div class="w-32 h-32 flex-shrink-0 bg-white rounded-2xl shadow-inner flex items-center justify-center border border-surface-variant/20">
+<span class="material-symbols-outlined text-[64px] text-cool-gray-muted/50">print</span>
+</div>
+<div class="flex-1 space-y-8 w-full">
+<div class="flex flex-col sm:flex-row gap-6">
+<select class="flex-1 bg-white border-2 border-surface-variant/50 rounded-xl px-5 py-4 font-label-md text-xl outline-none focus:ring-4 ring-primary/20 appearance-none bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIGZpbGw9Im5vbmUiIHZpZXdCb3g9IjAgMCAyNCAyNCIgc3Ryb2tlPSIjNjQ3NDhCIiBzdHJva2Utd2lkdGg9IjIiPjxwYXRoIGQ9Ik02IDlsNiA2IDYtNiIvPjwvc3ZnPg==')] bg-[length:24px] bg-[right_1.25rem_center] bg-no-repeat">
+<option>Khổ giấy lớn 80mm (K80)</option>
+<option>Khổ giấy nhỏ 58mm (K58)</option>
+<option>Khổ A5 (Máy in Laser)</option>
+</select>
+<button class="px-8 py-4 bg-primary text-on-primary rounded-xl font-label-md hover:shadow-2xl transition-all text-xl flex items-center justify-center gap-2">
+<span class="material-symbols-outlined">search</span>
+                          Tìm máy in
+                        </button>
+</div>
+<div class="flex flex-wrap items-center gap-10">
+<label class="flex items-center gap-4 cursor-pointer group">
+<div class="relative">
+<input checked="" class="sr-only peer" type="checkbox">
+<div class="w-16 h-8 bg-cool-gray-muted/30 rounded-full peer-checked:bg-primary transition-colors"></div>
+<div class="absolute left-1 top-1 w-6 h-6 bg-white rounded-full transition-transform peer-checked:translate-x-8 shadow-sm"></div>
+</div>
+<span class="font-label-md text-on-surface text-lg font-medium group-hover:text-primary transition-colors">Tự động in sau bán hàng</span>
+</label>
+<label class="flex items-center gap-4 cursor-pointer group">
+<div class="relative">
+<input class="sr-only peer" type="checkbox">
+<div class="w-16 h-8 bg-cool-gray-muted/30 rounded-full peer-checked:bg-primary transition-colors"></div>
+<div class="absolute left-1 top-1 w-6 h-6 bg-white rounded-full transition-transform peer-checked:translate-x-8 shadow-sm"></div>
+</div>
+<span class="font-label-md text-on-surface text-lg font-medium group-hover:text-primary transition-colors">In 2 liên</span>
+</label>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Footer with Reset and Sync status -->
+<div class="p-10 bg-surface-container-low/60 border-t border-surface-variant/40 flex flex-col sm:flex-row justify-between items-center gap-6">
+<div class="flex items-center gap-4">
+<span class="w-3 h-3 rounded-full bg-primary animate-pulse"></span>
+<span class="font-body-md text-on-surface-variant italic text-lg">Hệ thống đang đồng bộ dữ liệu an toàn...</span>
+</div>
+<button class="text-error font-bold text-xl hover:underline decoration-4 underline-offset-8">Đặt lại cấu hình mặc định</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Micro-interaction Scripts -->
+<script>
+        function toggleVisibility() {
+          const input = document.getElementById('api-key-input');
+          const icon = document.getElementById('eye-icon');
+          if (input.type === 'password') {
+            input.type = 'text';
+            icon.innerText = 'visibility_off';
+          } else {
+            input.type = 'password';
+            icon.innerText = 'visibility';
+          }
+        }
+
+        // Interactive feedback for payment toggles
+        document.querySelectorAll('input[name="payment"]').forEach(radio => {
+          radio.addEventListener('change', (e) => {
+            document.querySelectorAll('input[name="payment"]').forEach(r => {
+              const label = r.closest('label');
+              label.classList.remove('border-primary', 'bg-primary/5', 'border-4');
+              label.classList.add('border-surface-variant', 'border-2');
+              const icon = label.querySelector('.material-symbols-outlined');
+              icon.classList.remove('text-primary');
+              icon.classList.add('text-on-surface-variant');
+            });
+            
+            if (e.target.checked) {
+              const label = e.target.closest('label');
+              label.classList.add('border-primary', 'bg-primary/5', 'border-4');
+              label.classList.remove('border-surface-variant', 'border-2');
+              const icon = label.querySelector('.material-symbols-outlined');
+              icon.classList.add('text-primary');
+              icon.classList.remove('text-on-surface-variant');
+            }
+          });
+        });
+      </script>
+</main>
+</div>
+
+
+
+
+
+
+</body></html>

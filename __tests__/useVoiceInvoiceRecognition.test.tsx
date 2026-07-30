@@ -581,5 +581,22 @@ describe('useVoiceInvoiceRecognition', () => {
     expect(onFinalTranscript).toHaveBeenCalledTimes(1);
     expect(onFinalTranscript).toHaveBeenCalledWith('một ký gạo');
     expect(onError).not.toHaveBeenCalled();
+  it('passes contextualStrings to the native module start method', async () => {
+    const { result } = renderHook(() =>
+      useVoiceInvoiceRecognition({
+        onFinalTranscript: jest.fn(),
+        onError: jest.fn(),
+        contextualStrings: ['Gạo ST25', 'Bắc Hương'],
+      })
+    );
+
+    await act(async () => result.current.start());
+
+    expect(speechModule.start).toHaveBeenCalledWith(
+      expect.objectContaining({
+        lang: 'vi-VN',
+        contextualStrings: ['Gạo ST25', 'Bắc Hương'],
+      })
+    );
   });
 });
