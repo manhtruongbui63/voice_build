@@ -1,7 +1,7 @@
-# Sửa lỗi crash khi xóa sản phẩm — Design
+# Sửa lỗi crash khi xóa sản phẩm + Xóa nhiều sản phẩm — Design
 
 **Ngày:** 2026-07-30
-**Loại:** Bug fix (crash) + thay đổi schema nhỏ
+**Loại:** Bug fix (crash) + thay đổi schema nhỏ + tính năng xóa nhiều (multi-select)
 
 ## Vấn đề
 
@@ -68,15 +68,52 @@ Bọc `try/catch` quanh lời gọi xóa trong `ProductCatalogScreen.tsx`:
 
 `InvoiceItem.product_id` nới thành `number | null` (chỉ nới kiểu; UI hiển thị dùng `product_name` nên không đổi logic).
 
+### 4. Xóa nhiều sản phẩm (multi-select bằng checkbox)
+
+**Hàm DB mới — `deleteProductsFromDB(ids: number[])` (`src/services/db.ts`):**
+- `ids` rỗng → no-op (return sớm).
+- Ngược lại: xóa trong **một transaction** để nguyên tử:
+  ```
+  DELETE FROM products WHERE id IN (?, ?, ...)   -- placeholder theo số lượng ids
+  ```
+  Dùng `database.withTransactionSync(...)` (hoặc `BEGIN/COMMIT`). Nhờ migration `ON DELETE SET NULL`, các dòng `invoice_items` tham chiếu tự set `product_id = NULL`, lịch sử hóa đơn giữ nguyên.
+- `deleteProductFromDB(id)` (đơn lẻ) giữ nguyên cho nút xóa từng thẻ.
+
+**UI — `ProductCatalogScreen.tsx`:**
+- State mới: `selectionMode: boolean`, `selectedIds: Set<number>`.
+- **Nút "Chọn"** ở header bật/tắt `selectionMode`. Khi tắt: reset `selectedIds`, ẩn checkbox và thanh hành động.
+- Trong `selectionMode`:
+  - Mỗi thẻ hiện **checkbox**; chạm cả thẻ để toggle id trong `selectedIds` (thay cho hành vi mở sửa). Nút Sửa/Xóa từng thẻ ẩn đi trong chế độ chọn.
+  - **Thanh hành động** (trên danh sách) hiện: "Đã chọn {N}", nút **"Chọn tất cả"** (toggle chọn/bỏ toàn bộ danh sách đang lọc), nút **"Xóa ({N})"** (disable khi N = 0), nút **"Hủy"**.
+- **Luồng xóa nhiều:** bấm "Xóa (N)" → `Alert` xác nhận "Xóa {N} sản phẩm đã chọn?" → `onPress`:
+  ```
+  try { deleteProductsFromDB([...selectedIds]); loadProducts(); setSelectionMode(false); setSelectedIds(new Set()); }
+  catch { Alert.alert('Lỗi', 'Không thể xóa sản phẩm. Vui lòng thử lại.'); }
+  ```
+  Dùng chung **lưới an toàn try/catch** như mục 2 → không crash.
+- Ngoài `selectionMode`, màn hình hoạt động y như hiện tại (xóa/sửa từng thẻ).
+
+Đây chính là kịch bản trước đây gây crash (xóa loạt sản phẩm). Với migration + transaction + try/catch, xóa nhiều trở nên an toàn.
+
 ## Data flow sau khi sửa
 
+**Xóa từng sản phẩm:**
 ```
-Người dùng bấm Xóa
-  → Alert xác nhận
+Bấm Xóa (thẻ) → Alert xác nhận
   → onPress: try { deleteProductFromDB(id); loadProducts(); }
              catch { Alert lỗi thân thiện }
-  → deleteProductFromDB: DELETE FROM products WHERE id = ?
+  → DELETE FROM products WHERE id = ?
        → invoice_items tham chiếu (nếu có): product_id tự set NULL (ON DELETE SET NULL)
+       → hóa đơn cũ vẫn hiển thị đủ nhờ snapshot
+```
+
+**Xóa nhiều sản phẩm:**
+```
+Bấm "Chọn" → tick nhiều thẻ → bấm "Xóa (N)" → Alert xác nhận
+  → onPress: try { deleteProductsFromDB([...ids]); loadProducts(); thoát selectionMode }
+             catch { Alert lỗi thân thiện }
+  → DELETE FROM products WHERE id IN (?, ...) trong 1 transaction
+       → mọi invoice_items tham chiếu: product_id tự set NULL
        → hóa đơn cũ vẫn hiển thị đủ nhờ snapshot
 ```
 
@@ -90,14 +127,18 @@ Người dùng bấm Xóa
 
 > Lưu ý: jest đang **mock `expo-sqlite`** (không chạy SQLite thật), nên không test được hành vi FK thật ở tầng unit. Kiểm chứng FK thật thực hiện trên thiết bị.
 
-1. **Lưới an toàn UI (ProductCatalogScreen):** mock `deleteProductFromDB` ném lỗi → render màn, kích hoạt xác nhận Xóa → khẳng định **hiện `Alert` lỗi, không văng**, và không gọi tiếp `loadProducts` gây lỗi lan.
+1. **Lưới an toàn UI (ProductCatalogScreen):** mock `deleteProductFromDB` / `deleteProductsFromDB` ném lỗi → render màn, kích hoạt xác nhận Xóa → khẳng định **hiện `Alert` lỗi, không văng**, và không gọi tiếp `loadProducts` gây lỗi lan.
 2. **Guard idempotency của migration:** mock `getDB` trả đối tượng giả với `getAllSync`/`execSync` là jest.fn.
    - Khi `foreign_key_list` đã trả `on_delete: 'SET NULL'` → **không** chạy các câu lệnh rebuild.
    - Khi chưa có → **có** chạy rebuild (khẳng định các câu `CREATE TABLE invoice_items_new`, `INSERT ... SELECT`, `DROP TABLE`, `RENAME` được thực thi).
-3. **Kiểm chứng thật trên iPhone 12** sau khi build lại: xóa loạt sản phẩm đã có trong hóa đơn → không crash; mở lại Báo Cáo kiểm tra hóa đơn cũ vẫn hiển thị đủ dòng.
+3. **`deleteProductsFromDB`:** mock db → `ids` rỗng thì **không** chạy câu lệnh nào; `ids` có phần tử thì chạy `DELETE ... WHERE id IN (?, ...)` với đúng số placeholder và tham số, bên trong transaction.
+4. **Multi-select UI:** bật "Chọn" → thẻ hiện checkbox; tick N sản phẩm → nút "Xóa (N)" gọi `deleteProductsFromDB` với đúng danh sách id; "Chọn tất cả" tick toàn bộ; N = 0 thì nút Xóa disable.
+5. **Kiểm chứng thật trên iPhone 12** sau khi build lại: xóa loạt sản phẩm (cả đơn lẻ lẫn multi-select) đã có trong hóa đơn → không crash; mở lại Báo Cáo kiểm tra hóa đơn cũ vẫn hiển thị đủ dòng.
 
 ## Phạm vi / YAGNI
 
-- Không đổi UI xóa (vẫn Alert xác nhận từng sản phẩm) — ngoài phạm vi.
-- Không thêm tính năng "xóa nhiều cùng lúc" — ngoài phạm vi.
+- **Trong phạm vi:** xóa từng sản phẩm (đã có) + xóa nhiều bằng checkbox (mới); đều qua lưới an toàn.
+- Vẫn giữ `Alert` xác nhận trước khi xóa (đơn lẻ và theo nhóm).
+- Không thêm chọn nhiều cho màn hình khác (hóa đơn, v.v.) — ngoài phạm vi.
+- Không thêm undo/khôi phục sau xóa — ngoài phạm vi.
 - Không đụng tới luồng lưu hóa đơn hay các FK khác.
