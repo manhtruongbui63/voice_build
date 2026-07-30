@@ -3,10 +3,12 @@ import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator, Alert, Ani
 import { MaterialIcons } from '@expo/vector-icons';
 import { getProductsFromDB } from '../services/db';
 import { parseVoiceTranscript } from '../services/aiParser';
+import { localFastParse } from '../services/localInvoiceParser';
 import { getGeminiApiKey } from '../services/geminiSettingsService';
 import { correctTranscript } from '../services/transcriptCorrection';
-import { MatchedItem, PaymentMethod } from '../types';
+import { AIParsingResult, MatchedItem, PaymentMethod, Product } from '../types';
 import { DraftInvoiceModal } from '../components/DraftInvoiceModal';
+import { Toast } from '../components/Toast';
 import { useVoiceInvoiceRecognition, VoiceRecognitionErrorCode } from '../hooks/useVoiceInvoiceRecognition';
 import { colors, typography, fontFamily } from '../theme/tokens';
 
@@ -41,6 +43,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onOpenSettings }) => {
   const [matchedItems, setMatchedItems] = useState<MatchedItem[]>([]);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('chuyển khoản');
   const [draftVisible, setDraftVisible] = useState(false);
+  const [warningVisible, setWarningVisible] = useState(false);
   const isMountedRef = useRef(true);
   const microphonePendingRef = useRef(false);
   const apiKeyRef = useRef<string | null>(null);
@@ -57,24 +60,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onOpenSettings }) => {
     };
   }, []);
 
-  const handleFinalTranscript = useCallback(async (alternatives: string[]) => {
-    if (!isMountedRef.current) return;
-
-    const best = (alternatives[0] ?? '').trim();
-    const apiKey = apiKeyRef.current;
-    apiKeyRef.current = null;
-
-    if (!best || !apiKey || parserPendingRef.current) return;
-
-    const products = getProductsFromDB();
-    setTranscript(correctTranscript(best, products));
-    setLoading(true);
-    parserPendingRef.current = true;
-
-    try {
-      const result = await parseVoiceTranscript(alternatives, products, apiKey);
-      if (!isMountedRef.current) return;
-
+  const finalizeResult = useCallback(
+    (result: AIParsingResult, products: Product[]) => {
       const mappedItems: MatchedItem[] = result.matched_items.map((item) => {
         const prod = products.find((p) => p.id === item.product_id);
         const unit_price = prod ? prod.unit_price : 0;
@@ -89,23 +76,59 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onOpenSettings }) => {
         };
       });
 
+      // Không nhận diện được sản phẩm nào → cảnh báo và ở lại màn giọng nói.
+      if (mappedItems.length === 0) {
+        setWarningVisible(true);
+        return;
+      }
+
       setMatchedItems(mappedItems);
       setPaymentMethod(result.payment_method || 'chuyển khoản');
       setDraftVisible(true);
-    } catch (err: unknown) {
-      if (isMountedRef.current) {
-        Alert.alert(
-          'Lỗi phân tích AI',
-          getSafeParserErrorMessage(err)
-        );
+    },
+    []
+  );
+
+  const handleFinalTranscript = useCallback(
+    async (alternatives: string[]) => {
+      if (!isMountedRef.current) return;
+
+      const best = (alternatives[0] ?? '').trim();
+      const apiKey = apiKeyRef.current;
+      apiKeyRef.current = null;
+
+      if (!best || !apiKey || parserPendingRef.current) return;
+
+      const products = getProductsFromDB();
+      setTranscript(correctTranscript(best, products));
+
+      // Đường nhanh cục bộ: chỉ dùng khi phân tích chắc chắn tuyệt đối (không gọi mạng).
+      const fast = localFastParse(alternatives, products);
+      if (fast) {
+        finalizeResult(fast, products);
+        return;
       }
-    } finally {
-      if (isMountedRef.current) {
-        setLoading(false);
-        parserPendingRef.current = false;
+
+      setLoading(true);
+      parserPendingRef.current = true;
+
+      try {
+        const result = await parseVoiceTranscript(alternatives, products, apiKey);
+        if (!isMountedRef.current) return;
+        finalizeResult(result, products);
+      } catch (err: unknown) {
+        if (isMountedRef.current) {
+          Alert.alert('Lỗi phân tích AI', getSafeParserErrorMessage(err));
+        }
+      } finally {
+        if (isMountedRef.current) {
+          setLoading(false);
+          parserPendingRef.current = false;
+        }
       }
-    }
-  }, []);
+    },
+    [finalizeResult]
+  );
 
   const handleRecognitionError = useCallback((code: VoiceRecognitionErrorCode) => {
     apiKeyRef.current = null;
@@ -292,6 +315,13 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onOpenSettings }) => {
           </View>
         </View>
       </View>
+
+      <Toast
+        visible={warningVisible}
+        variant="warning"
+        title="Không nhận diện được sản phẩm nào. Vui lòng nói lại."
+        onClose={() => setWarningVisible(false)}
+      />
 
       <DraftInvoiceModal
         visible={draftVisible}

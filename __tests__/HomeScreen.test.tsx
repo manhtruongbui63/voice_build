@@ -3,10 +3,12 @@ import { Alert } from 'react-native';
 import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
 import { HomeScreen } from '../src/screens/HomeScreen';
 import { parseVoiceTranscript } from '../src/services/aiParser';
+import { localFastParse } from '../src/services/localInvoiceParser';
 import { getGeminiApiKey } from '../src/services/geminiSettingsService';
 
 jest.mock('../src/services/geminiSettingsService');
 jest.mock('../src/services/aiParser');
+jest.mock('../src/services/localInvoiceParser');
 jest.mock('../src/services/db', () => ({
   getProductsFromDB: jest.fn(() => []),
 }));
@@ -18,7 +20,7 @@ const mockStart = jest.fn<Promise<void>, []>();
 const mockStop = jest.fn<void, []>();
 const mockAbort = jest.fn<void, []>();
 let mockHandlers: {
-  onFinalTranscript: (transcript: string) => void;
+  onFinalTranscript: (alternatives: string[]) => void;
   onError: (code: string) => void;
 };
 
@@ -37,10 +39,12 @@ jest.mock('../src/hooks/useVoiceInvoiceRecognition', () => ({
 
 const mockedGetKey = getGeminiApiKey as jest.MockedFunction<typeof getGeminiApiKey>;
 const mockedParse = parseVoiceTranscript as jest.MockedFunction<typeof parseVoiceTranscript>;
+const mockedFastParse = localFastParse as jest.MockedFunction<typeof localFastParse>;
 
 describe('HomeScreen Gemini configuration', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockedFastParse.mockReturnValue(null);
   });
 
   afterEach(() => {
@@ -79,7 +83,7 @@ describe('HomeScreen Gemini configuration', () => {
       fireEvent.press(getByTestId('voice-microphone-button'));
     });
     await act(async () => {
-      mockHandlers.onFinalTranscript('bán một ký gạo ST');
+      mockHandlers.onFinalTranscript(['bán một ký gạo ST']);
     });
 
     await waitFor(() =>
@@ -142,6 +146,55 @@ describe('HomeScreen Gemini configuration', () => {
     expect(mockStart).not.toHaveBeenCalled();
     expect(mockedParse).not.toHaveBeenCalled();
     expect(alertSpy).not.toHaveBeenCalled();
+  });
+
+  it('prefers the local fast-path and skips Gemini when parsing is certain', async () => {
+    mockedGetKey.mockResolvedValue('stored-test-key');
+    mockedFastParse.mockReturnValue({
+      matched_items: [
+        {
+          product_id: 1,
+          product_name: 'Gạo ST25',
+          quantity: 2,
+          unit: 'kg',
+          confidence: 0.97,
+        },
+      ],
+      unmatched_text: [],
+    });
+
+    const { getByTestId } = render(<HomeScreen onOpenSettings={jest.fn()} />);
+    await act(async () => {
+      fireEvent.press(getByTestId('voice-microphone-button'));
+    });
+    await act(async () => {
+      mockHandlers.onFinalTranscript(['2 cân gạo st']);
+    });
+
+    expect(mockedFastParse).toHaveBeenCalledWith(['2 cân gạo st'], []);
+    expect(mockedParse).not.toHaveBeenCalled();
+  });
+
+  it('shows a warning toast and does not open the draft when no product matches', async () => {
+    mockedGetKey.mockResolvedValue('stored-test-key');
+    mockedFastParse.mockReturnValue(null);
+    mockedParse.mockResolvedValue({ matched_items: [], unmatched_text: [] });
+
+    const { getByTestId, getByText } = render(
+      <HomeScreen onOpenSettings={jest.fn()} />
+    );
+    await act(async () => {
+      fireEvent.press(getByTestId('voice-microphone-button'));
+    });
+    await act(async () => {
+      mockHandlers.onFinalTranscript(['xyz lạ hoắc']);
+    });
+
+    await waitFor(() =>
+      expect(
+        getByText('Không nhận diện được sản phẩm nào. Vui lòng nói lại.')
+      ).toBeTruthy()
+    );
   });
 });
 

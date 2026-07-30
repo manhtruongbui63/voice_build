@@ -3,6 +3,7 @@ import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
 import { Alert } from 'react-native';
 import { HomeScreen } from '../src/screens/HomeScreen';
 import { parseVoiceTranscript } from '../src/services/aiParser';
+import { localFastParse } from '../src/services/localInvoiceParser';
 import { getGeminiApiKey } from '../src/services/geminiSettingsService';
 import type {
   VoiceRecognitionErrorCode,
@@ -11,6 +12,7 @@ import type {
 
 jest.mock('../src/services/geminiSettingsService');
 jest.mock('../src/services/aiParser');
+jest.mock('../src/services/localInvoiceParser');
 const mockProducts = [
   { id: 1, name: 'Gạo ST25', aliases: 'st25, gạo sóc trăng' },
   { id: 2, name: 'Bắc Hương', aliases: '' },
@@ -49,6 +51,7 @@ jest.mock('../src/hooks/useVoiceInvoiceRecognition', () => ({
 
 const mockedGetKey = getGeminiApiKey as jest.MockedFunction<typeof getGeminiApiKey>;
 const mockedParse = parseVoiceTranscript as jest.MockedFunction<typeof parseVoiceTranscript>;
+const mockedFastParse = localFastParse as jest.MockedFunction<typeof localFastParse>;
 
 describe('HomeScreen native Vietnamese speech recognition', () => {
   beforeEach(() => {
@@ -57,6 +60,7 @@ describe('HomeScreen native Vietnamese speech recognition', () => {
     mockInterimTranscript = '';
     mockedGetKey.mockResolvedValue('stored-test-key');
     mockedParse.mockResolvedValue({ matched_items: [], unmatched_text: [] });
+    mockedFastParse.mockReturnValue(null);
   });
 
   afterEach(() => {
