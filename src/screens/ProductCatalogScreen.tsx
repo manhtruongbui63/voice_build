@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { View, Text, FlatList, TextInput, TouchableOpacity, StyleSheet, Alert, ScrollView } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { Product } from '../types';
-import { getProductsFromDB, addProductToDB, updateProductInDB, deleteProductFromDB } from '../services/db';
+import { getProductsFromDB, addProductToDB, updateProductInDB, deleteProductFromDB, deleteProductsFromDB } from '../services/db';
 import { AddEditProductModal } from '../components/AddEditProductModal';
 import { colors, typography } from '../theme/tokens';
 
@@ -35,7 +35,18 @@ export const ProductCatalogScreen: React.FC = () => {
   const handleDelete = (id: number) => {
     Alert.alert('Xác nhận xóa', 'Bạn có chắc chắn muốn xóa sản phẩm này?', [
       { text: 'Hủy', style: 'cancel' },
-      { text: 'Xóa', style: 'destructive', onPress: () => { deleteProductFromDB(id); loadProducts(); } },
+      {
+        text: 'Xóa',
+        style: 'destructive',
+        onPress: () => {
+          try {
+            deleteProductFromDB(id);
+            loadProducts();
+          } catch {
+            Alert.alert('Lỗi', 'Không thể xóa sản phẩm. Vui lòng thử lại.');
+          }
+        },
+      },
     ]);
   };
 
@@ -74,7 +85,11 @@ export const ProductCatalogScreen: React.FC = () => {
             <MaterialIcons name="edit" size={22} color={colors.tertiary} />
             <Text style={styles.editText}>Sửa</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.deleteBtn} onPress={() => handleDelete(item.id)}>
+          <TouchableOpacity
+            testID={`delete-button-${item.id}`}
+            style={styles.deleteBtn}
+            onPress={() => handleDelete(item.id)}
+          >
             <MaterialIcons name="delete" size={22} color={colors.errorCrimson} />
           </TouchableOpacity>
         </View>
