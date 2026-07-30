@@ -1,6 +1,6 @@
 import { GoogleGenAI } from '@google/genai';
 
-export const GEMINI_MODEL = 'gemini-2.5-flash-lite' as const;
+export const GEMINI_MODEL = 'gemini-3.1-flash-lite' as const;
 
 export interface GeminiRequest {
   prompt: string;
