@@ -54,3 +54,42 @@ describe('ProductCatalogScreen delete safety net', () => {
     );
   });
 });
+
+describe('ProductCatalogScreen multi-select delete', () => {
+  const confirmDeleteAlert = () =>
+    jest.spyOn(Alert, 'alert').mockImplementation((_t, _m, buttons) => {
+      buttons?.find((b) => b.text === 'Xóa')?.onPress?.();
+    });
+
+  it('bulk-deletes the selected products', () => {
+    confirmDeleteAlert();
+    const { getByTestId } = render(<ProductCatalogScreen />);
+
+    fireEvent.press(getByTestId('select-mode-toggle'));
+    fireEvent.press(getByTestId('product-card-1'));
+    fireEvent.press(getByTestId('product-card-3'));
+    fireEvent.press(getByTestId('bulk-delete-button'));
+
+    expect(mockedDeleteMany).toHaveBeenCalledWith([1, 3]);
+  });
+
+  it('selects all filtered products then deletes them', () => {
+    confirmDeleteAlert();
+    const { getByTestId } = render(<ProductCatalogScreen />);
+
+    fireEvent.press(getByTestId('select-mode-toggle'));
+    fireEvent.press(getByTestId('select-all-button'));
+    fireEvent.press(getByTestId('bulk-delete-button'));
+
+    expect(mockedDeleteMany).toHaveBeenCalledWith([1, 2, 3]);
+  });
+
+  it('does nothing when bulk delete is pressed with no selection', () => {
+    const { getByTestId } = render(<ProductCatalogScreen />);
+
+    fireEvent.press(getByTestId('select-mode-toggle'));
+    fireEvent.press(getByTestId('bulk-delete-button'));
+
+    expect(mockedDeleteMany).not.toHaveBeenCalled();
+  });
+});

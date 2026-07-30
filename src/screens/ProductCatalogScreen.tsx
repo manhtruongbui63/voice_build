@@ -14,6 +14,8 @@ export const ProductCatalogScreen: React.FC = () => {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [query, setQuery] = useState('');
   const [activeChip, setActiveChip] = useState('Tất cả');
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
 
   const loadProducts = () => {
     setProducts(getProductsFromDB());
@@ -58,44 +60,108 @@ export const ProductCatalogScreen: React.FC = () => {
     );
   }, [products, query]);
 
-  const renderCard = ({ item }: { item: Product }) => (
-    <View style={styles.card}>
-      <View style={styles.cardTop}>
-        <View style={{ flex: 1, gap: 4 }}>
-          <Text style={styles.productName}>{item.name}</Text>
-          {item.aliases ? (
-            <View style={styles.aliasRow}>
-              <View style={styles.aliasBadge}>
-                <Text style={styles.aliasBadgeText}>Viết tắt: {item.aliases}</Text>
+  const toggleSelectionMode = () => {
+    setSelectionMode((prev) => {
+      if (prev) setSelectedIds(new Set());
+      return !prev;
+    });
+  };
+
+  const toggleSelected = (id: number) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const allSelected = filtered.length > 0 && filtered.every((p) => selectedIds.has(p.id));
+
+  const toggleSelectAll = () => {
+    setSelectedIds(allSelected ? new Set() : new Set(filtered.map((p) => p.id)));
+  };
+
+  const handleBulkDelete = () => {
+    const ids = [...selectedIds];
+    if (ids.length === 0) return;
+    Alert.alert('Xác nhận xóa', `Xóa ${ids.length} sản phẩm đã chọn?`, [
+      { text: 'Hủy', style: 'cancel' },
+      {
+        text: 'Xóa',
+        style: 'destructive',
+        onPress: () => {
+          try {
+            deleteProductsFromDB(ids);
+            loadProducts();
+            setSelectionMode(false);
+            setSelectedIds(new Set());
+          } catch {
+            Alert.alert('Lỗi', 'Không thể xóa sản phẩm. Vui lòng thử lại.');
+          }
+        },
+      },
+    ]);
+  };
+
+  const renderCard = ({ item }: { item: Product }) => {
+    const checked = selectedIds.has(item.id);
+    return (
+      <TouchableOpacity
+        testID={`product-card-${item.id}`}
+        activeOpacity={selectionMode ? 0.7 : 1}
+        onPress={() => {
+          if (selectionMode) toggleSelected(item.id);
+        }}
+        style={styles.card}
+      >
+        <View style={styles.cardTop}>
+          {selectionMode ? (
+            <MaterialIcons
+              name={checked ? 'check-box' : 'check-box-outline-blank'}
+              size={24}
+              color={checked ? colors.primary : colors.onSurfaceVariant}
+              style={{ marginRight: 12 }}
+            />
+          ) : null}
+          <View style={{ flex: 1, gap: 4 }}>
+            <Text style={styles.productName}>{item.name}</Text>
+            {item.aliases ? (
+              <View style={styles.aliasRow}>
+                <View style={styles.aliasBadge}>
+                  <Text style={styles.aliasBadgeText}>Viết tắt: {item.aliases}</Text>
+                </View>
               </View>
+            ) : null}
+          </View>
+          <View style={styles.thumb}>
+            <Text style={styles.thumbLetter}>{item.name.trim().charAt(0).toUpperCase()}</Text>
+          </View>
+        </View>
+        <View style={styles.cardBottom}>
+          <Text style={styles.price}>{item.unit_price.toLocaleString('vi-VN')} đ</Text>
+          {!selectionMode ? (
+            <View style={styles.actions}>
+              <TouchableOpacity
+                style={styles.editBtn}
+                onPress={() => { setSelectedProduct(item); setModalVisible(true); }}
+              >
+                <MaterialIcons name="edit" size={22} color={colors.tertiary} />
+                <Text style={styles.editText}>Sửa</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                testID={`delete-button-${item.id}`}
+                style={styles.deleteBtn}
+                onPress={() => handleDelete(item.id)}
+              >
+                <MaterialIcons name="delete" size={22} color={colors.errorCrimson} />
+              </TouchableOpacity>
             </View>
           ) : null}
         </View>
-        <View style={styles.thumb}>
-          <Text style={styles.thumbLetter}>{item.name.trim().charAt(0).toUpperCase()}</Text>
-        </View>
-      </View>
-      <View style={styles.cardBottom}>
-        <Text style={styles.price}>{item.unit_price.toLocaleString('vi-VN')} đ</Text>
-        <View style={styles.actions}>
-          <TouchableOpacity
-            style={styles.editBtn}
-            onPress={() => { setSelectedProduct(item); setModalVisible(true); }}
-          >
-            <MaterialIcons name="edit" size={22} color={colors.tertiary} />
-            <Text style={styles.editText}>Sửa</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            testID={`delete-button-${item.id}`}
-            style={styles.deleteBtn}
-            onPress={() => handleDelete(item.id)}
-          >
-            <MaterialIcons name="delete" size={22} color={colors.errorCrimson} />
-          </TouchableOpacity>
-        </View>
-      </View>
-    </View>
-  );
+      </TouchableOpacity>
+    );
+  };
 
   return (
     <View style={styles.container}>
@@ -107,9 +173,13 @@ export const ProductCatalogScreen: React.FC = () => {
           </View>
           <Text style={styles.brandName}>VoiceBill</Text>
         </View>
-        <View style={styles.avatar}>
-          <MaterialIcons name="person" size={20} color={colors.onSurfaceVariant} />
-        </View>
+        <TouchableOpacity
+          testID="select-mode-toggle"
+          onPress={toggleSelectionMode}
+          style={styles.selectToggle}
+        >
+          <Text style={styles.selectToggleText}>{selectionMode ? 'Xong' : 'Chọn'}</Text>
+        </TouchableOpacity>
       </View>
 
       {/* Search + chips */}
@@ -143,6 +213,26 @@ export const ProductCatalogScreen: React.FC = () => {
           })}
         </ScrollView>
       </View>
+
+      {selectionMode ? (
+        <View style={styles.selectionBar}>
+          <Text style={styles.selectionCount}>Đã chọn {selectedIds.size}</Text>
+          <View style={styles.selectionActions}>
+            <TouchableOpacity testID="select-all-button" onPress={toggleSelectAll}>
+              <Text style={styles.selectAllText}>{allSelected ? 'Bỏ chọn' : 'Chọn tất cả'}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              testID="bulk-delete-button"
+              onPress={handleBulkDelete}
+              disabled={selectedIds.size === 0}
+              style={[styles.bulkDeleteBtn, selectedIds.size === 0 && styles.bulkDeleteBtnDisabled]}
+            >
+              <MaterialIcons name="delete" size={18} color={colors.white} />
+              <Text style={styles.bulkDeleteText}>Xóa ({selectedIds.size})</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      ) : null}
 
       {/* Product list */}
       <FlatList
@@ -312,4 +402,31 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
     elevation: 8,
   },
+  // Multi-select
+  selectToggle: { paddingHorizontal: 12, paddingVertical: 8 },
+  selectToggleText: { ...typography.labelMd, color: colors.primary },
+  selectionBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: colors.primaryContainerFaint,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.primaryContainerBorder,
+  },
+  selectionCount: { ...typography.labelMd, color: colors.onSurface },
+  selectionActions: { flexDirection: 'row', alignItems: 'center', gap: 16 },
+  selectAllText: { ...typography.labelMd, color: colors.primary },
+  bulkDeleteBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 8,
+    backgroundColor: colors.errorCrimson,
+  },
+  bulkDeleteBtnDisabled: { opacity: 0.4 },
+  bulkDeleteText: { ...typography.labelMd, color: colors.white },
 });
