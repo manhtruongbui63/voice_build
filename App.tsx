@@ -14,6 +14,7 @@ import {
   Inter_700Bold,
 } from '@expo-google-fonts/inter';
 import { initDB } from './src/services/db';
+import { SplashScreen } from './src/screens/SplashScreen';
 import { HomeScreen } from './src/screens/HomeScreen';
 import { ProductCatalogScreen } from './src/screens/ProductCatalogScreen';
 import { InvoiceHistoryScreen } from './src/screens/InvoiceHistoryScreen';
@@ -34,6 +35,7 @@ const TABS: { key: ActiveTab; label: string; icon: MaterialIconName }[] = [
 export default function App() {
   const [activeTab, setActiveTab] = useState<ActiveTab>('home');
   const [dbReady, setDbReady] = useState(false);
+  const [minSplashPassed, setMinSplashPassed] = useState(false);
 
   const [fontsLoaded] = useFonts({
     PlusJakartaSans_500Medium,
@@ -54,12 +56,14 @@ export default function App() {
     }
   }, []);
 
-  if (!dbReady || !fontsLoaded) {
-    return (
-      <View style={styles.center}>
-        <Text>Đang khởi tạo cơ sở dữ liệu SQLite...</Text>
-      </View>
-    );
+  // Giữ màn khởi động tối thiểu ~2.6s để chạy trọn hiệu ứng.
+  useEffect(() => {
+    const timer = setTimeout(() => setMinSplashPassed(true), 2600);
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (!dbReady || !fontsLoaded || !minSplashPassed) {
+    return <SplashScreen />;
   }
 
   return (
@@ -95,7 +99,6 @@ export default function App() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.slateBg },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   content: { flex: 1 },
   navBar: {
     flexDirection: 'row',

@@ -9,6 +9,9 @@ jest.mock('expo-font', () => ({
 jest.mock('../src/services/db', () => ({
   initDB: jest.fn(),
 }));
+jest.mock('../src/screens/SplashScreen', () => ({
+  SplashScreen: () => null,
+}));
 jest.mock('../src/screens/HomeScreen', () => ({
   HomeScreen: ({ onOpenSettings }: { onOpenSettings: () => void }) => {
     const React = require('react');
@@ -35,19 +38,21 @@ jest.mock('../src/screens/SettingsScreen', () => ({
 }));
 
 describe('App Settings navigation', () => {
-  it('opens Settings from the Settings tab', () => {
-    const { getByText } = render(<App />);
+  // Màn khởi động giữ tối thiểu ~2.6s trước khi hiện giao diện chính,
+  // nên chờ điều hướng xuất hiện thay vì bấm ngay.
+  it('opens Settings from the Settings tab', async () => {
+    const { getByText, findByText } = render(<App />);
 
-    fireEvent.press(getByText('Cài Đặt'));
-
-    expect(getByText('Cài đặt Gemini')).toBeTruthy();
-  });
-
-  it('wires the Home missing-key action to Settings', () => {
-    const { getByText } = render(<App />);
-
-    fireEvent.press(getByText('Mở cài đặt từ Home'));
+    fireEvent.press(await findByText('Cài Đặt', {}, { timeout: 10000 }));
 
     expect(getByText('Cài đặt Gemini')).toBeTruthy();
-  });
+  }, 15000);
+
+  it('wires the Home missing-key action to Settings', async () => {
+    const { getByText, findByText } = render(<App />);
+
+    fireEvent.press(await findByText('Mở cài đặt từ Home', {}, { timeout: 10000 }));
+
+    expect(getByText('Cài đặt Gemini')).toBeTruthy();
+  }, 15000);
 });

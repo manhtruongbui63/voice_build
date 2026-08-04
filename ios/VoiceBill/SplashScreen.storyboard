@@ -41,7 +41,7 @@
             <subviews>
               <imageView
                 userInteractionEnabled="NO"
-                contentMode="scaleAspectFill"
+                contentMode="scaleToFill"
                 horizontalHuggingPriority="251"
                 verticalHuggingPriority="251"
                 insetsLayoutMarginsFromSafeArea="NO"
