@@ -1,3 +1,5 @@
+export type PaymentMethod = 'tiền mặt' | 'chuyển khoản';
+
 export interface Product {
   id: number;
   name: string;
@@ -27,6 +29,7 @@ export interface Invoice {
   final_amount: number; // subtotal_amount - discount_amount
   paid_amount?: number;
   change_amount?: number;
+  payment_method: PaymentMethod;
   created_at?: string;
   items: InvoiceItem[];
 }
@@ -34,7 +37,7 @@ export interface Invoice {
 export interface InvoiceItem {
   id?: number;
   invoice_id?: number;
-  product_id: number;
+  product_id: number | null;
   product_name: string;
   quantity: number;
   unit: string;
@@ -50,5 +53,6 @@ export interface AIParsingResult {
     unit: string;
     confidence: number;
   }[];
+  payment_method?: PaymentMethod;
   unmatched_text?: string[];
 }

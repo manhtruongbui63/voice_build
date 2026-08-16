@@ -2,6 +2,13 @@
 
 #import <React/RCTBundleURLProvider.h>
 #import <React/RCTLinkingManager.h>
+#import <React/RCTRootView.h>
+
+// Nền Deep Navy khớp splash (#05163A) — tránh chớp trắng trước khi JS vẽ khung đầu tiên.
+static UIColor *VoiceBillSplashColor(void)
+{
+  return [UIColor colorWithRed:5.0 / 255.0 green:22.0 / 255.0 blue:58.0 / 255.0 alpha:1.0];
+}
 
 @implementation AppDelegate
 
@@ -13,7 +20,17 @@
   // They will be passed down to the ViewController used by React Native.
   self.initialProps = @{};
 
-  return [super application:application didFinishLaunchingWithOptions:launchOptions];
+  BOOL didFinish = [super application:application didFinishLaunchingWithOptions:launchOptions];
+  self.window.backgroundColor = VoiceBillSplashColor();
+  self.window.rootViewController.view.backgroundColor = VoiceBillSplashColor();
+  return didFinish;
+}
+
+// Nền RN root view = navy để không lộ nền trắng trước khi React vẽ.
+- (void)customizeRootView:(RCTRootView *)rootView
+{
+  [super customizeRootView:rootView];
+  rootView.backgroundColor = VoiceBillSplashColor();
 }
 
 - (NSURL *)sourceURLForBridge:(RCTBridge *)bridge
