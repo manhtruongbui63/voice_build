@@ -1,7 +1,26 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
+  ExpoSpeechRecognitionErrorEvent,
   ExpoSpeechRecognitionModule,
+  ExpoSpeechRecognitionResultEvent,
 } from 'expo-speech-recognition';
+
+type NativeSpeechSubscription = { remove(): void };
+
+type SpeechRecognitionModuleWithListeners = typeof ExpoSpeechRecognitionModule & {
+  addListener(
+    eventName: 'result',
+    listener: (event: ExpoSpeechRecognitionResultEvent) => void
+  ): NativeSpeechSubscription;
+  addListener(
+    eventName: 'error',
+    listener: (event: ExpoSpeechRecognitionErrorEvent) => void
+  ): NativeSpeechSubscription;
+  addListener(eventName: 'end', listener: () => void): NativeSpeechSubscription;
+};
+
+const speechRecognitionModule =
+  ExpoSpeechRecognitionModule as SpeechRecognitionModuleWithListeners;
 
 export type VoiceRecognitionStatus =
   | 'idle'
@@ -112,7 +131,7 @@ export const useVoiceInvoiceRecognition = ({
     let permission;
     try {
       permission =
-        await ExpoSpeechRecognitionModule.requestPermissionsAsync();
+        await speechRecognitionModule.requestPermissionsAsync();
     } catch {
       if (
         !mountedRef.current ||
@@ -145,7 +164,7 @@ export const useVoiceInvoiceRecognition = ({
     }
 
     try {
-      ExpoSpeechRecognitionModule.start({
+      speechRecognitionModule.start({
         lang: 'vi-VN',
         interimResults: true,
         continuous: false,
@@ -186,7 +205,7 @@ export const useVoiceInvoiceRecognition = ({
     if (!activeRef.current || statusRef.current !== 'listening') return;
 
     updateStatus('stopping');
-    ExpoSpeechRecognitionModule.stop();
+    speechRecognitionModule.stop();
   }, [updateStatus]);
 
   const abort = useCallback(() => {
@@ -202,12 +221,12 @@ export const useVoiceInvoiceRecognition = ({
     }
 
     if (shouldAbort) {
-      ExpoSpeechRecognitionModule.abort();
+      speechRecognitionModule.abort();
     }
   }, [invalidateSession, takeQueuedStartResolve, updateStatus]);
 
   useEffect(() => {
-    const subResult = ExpoSpeechRecognitionModule.addListener('result', (event) => {
+    const subResult = speechRecognitionModule.addListener('result', (event) => {
       const best = event.results[0]?.transcript.trim() ?? '';
       if (
         !mountedRef.current ||
@@ -236,7 +255,7 @@ export const useVoiceInvoiceRecognition = ({
       onFinalTranscriptRef.current(alternatives.length > 0 ? alternatives : [best]);
     });
 
-    const subError = ExpoSpeechRecognitionModule.addListener('error', (event) => {
+    const subError = speechRecognitionModule.addListener('error', (event) => {
       if (!mountedRef.current || !activeRef.current) return;
 
       invalidateSession();
@@ -245,7 +264,7 @@ export const useVoiceInvoiceRecognition = ({
       onErrorRef.current(mapRecognitionError(event.error));
     });
 
-    const subEnd = ExpoSpeechRecognitionModule.addListener('end', () => {
+    const subEnd = speechRecognitionModule.addListener('end', () => {
       if (awaitingAbortEndRef.current) {
         awaitingAbortEndRef.current = false;
         const resumeQueuedStart = takeQueuedStartResolve();
@@ -280,7 +299,7 @@ export const useVoiceInvoiceRecognition = ({
       invalidateSession();
 
       if (shouldAbort) {
-        ExpoSpeechRecognitionModule.abort();
+        speechRecognitionModule.abort();
       }
     };
   }, [invalidateSession, takeQueuedStartResolve]);

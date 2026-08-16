@@ -5,11 +5,15 @@ import {
   TextInput,
   TouchableOpacity,
   Modal,
+  PanResponder,
+  type PanResponderGestureState,
   StyleSheet,
   ScrollView,
+  useWindowDimensions,
   Animated,
   Easing,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { Product } from '../types';
@@ -19,232 +23,566 @@ interface Props {
   visible: boolean;
   product?: Product | null;
   onClose: () => void;
-  onSave: (name: string, aliases: string, unit: string, price: number) => void;
+  onSave: (
+    name: string,
+    aliases: string,
+    unit: string,
+    price: number,
+    useAiAlias: boolean
+  ) => void | Promise<void>;
+  onDelete?: (product: Product) => void;
 }
 
-const UNITS = ['kg', 'Túi', 'Bao', 'Hộp', 'Chai', 'Lon', 'Gói'];
+const UNITS = ['kg', 'Túi', 'Bao', 'Yến', 'Tạ', 'Thùng', 'Hộp', 'Gói'];
+const DEFAULT_FORM = { name: '', aliases: '', unit: 'kg', price: '' };
+const DRAWER_MIN_RATIO = 0.7;
+const DRAWER_TOP_INSET = 56;
+const UNIT_DROPDOWN_MAX_HEIGHT = 220;
 
-/** Gộp "tên viết tắt" + danh sách alias thành một chuỗi aliases, khử trùng lặp. */
-const mergeAliases = (shortName: string, aliasList: string) => {
-  const tokens = [...shortName.split(','), ...aliasList.split(',')]
-    .map((t) => t.trim())
-    .filter(Boolean);
-  const seen = new Set<string>();
-  const unique: string[] = [];
-  tokens.forEach((t) => {
-    const key = t.toLowerCase();
-    if (!seen.has(key)) {
-      seen.add(key);
-      unique.push(t);
-    }
-  });
-  return unique.join(', ');
+type UnitDropdownPlacement = 'above' | 'below';
+
+export const getProductDrawerGestureAction = (
+  gestureState: Pick<PanResponderGestureState, 'dy' | 'vy'>
+): 'expand' | 'close' | 'none' => {
+  if (gestureState.dy < -40 || gestureState.vy < -0.35) return 'expand';
+  if (gestureState.dy > 50 || gestureState.vy > 0.35) return 'close';
+  return 'none';
 };
 
-export const AddEditProductModal: React.FC<Props> = ({ visible, product, onClose, onSave }) => {
+export const getProductDrawerDragHeight = ({
+  startHeight,
+  dy,
+  minHeight,
+  maxHeight,
+}: {
+  startHeight: number;
+  dy: number;
+  minHeight: number;
+  maxHeight: number;
+}) => Math.min(maxHeight, Math.max(minHeight, startHeight - dy));
+
+export const getProductDrawerDragOffset = ({
+  startOffset,
+  dy,
+  minOffset,
+  maxOffset,
+}: {
+  startOffset: number;
+  dy: number;
+  minOffset: number;
+  maxOffset: number;
+}) => Math.min(maxOffset, Math.max(minOffset, startOffset + dy));
+
+export const getProductDrawerMaxHeight = ({
+  windowHeight,
+  topInset,
+}: {
+  windowHeight: number;
+  topInset: number;
+}) => Math.max(1, windowHeight - topInset);
+
+export const getProductDrawerInitialOffset = ({
+  maxHeight,
+  minRatio,
+}: {
+  maxHeight: number;
+  minRatio: number;
+}) => Math.round(maxHeight * (1 - minRatio));
+
+export const getProductDrawerClosedOffset = ({ maxHeight }: { maxHeight: number }) => maxHeight;
+
+export const getUnitDropdownPlacement = ({
+  selectY,
+  selectHeight,
+  sheetHeight,
+  actionBarHeight,
+  dropdownHeight,
+}: {
+  selectY: number;
+  selectHeight: number;
+  sheetHeight: number;
+  actionBarHeight: number;
+  dropdownHeight: number;
+}): UnitDropdownPlacement => {
+  const spaceBelow = sheetHeight - actionBarHeight - (selectY + selectHeight);
+  return spaceBelow >= dropdownHeight ? 'below' : 'above';
+};
+
+export const AddEditProductModal: React.FC<Props> = ({ visible, product, onClose, onSave, onDelete }) => {
+  const { height: windowHeight } = useWindowDimensions();
   const [name, setName] = useState('');
-  const [shortName, setShortName] = useState('');
-  const [aliasList, setAliasList] = useState('');
+  const [aliases, setAliases] = useState('');
   const [unit, setUnit] = useState('kg');
   const [price, setPrice] = useState('');
+  const [useAiAlias, setUseAiAlias] = useState(true);
   const [unitOpen, setUnitOpen] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [drawerSnap, setDrawerSnap] = useState<'half' | 'full'>('half');
+  const [actionBarHeight, setActionBarHeight] = useState(0);
+  const [unitSelectLayout, setUnitSelectLayout] = useState({ y: 0, height: 56 });
+  const maxDrawerHeight = getProductDrawerMaxHeight({ windowHeight, topInset: DRAWER_TOP_INSET });
+  const minDrawerHeight = maxDrawerHeight * DRAWER_MIN_RATIO;
+  const halfDrawerOffset = getProductDrawerInitialOffset({ maxHeight: maxDrawerHeight, minRatio: DRAWER_MIN_RATIO });
+  const drawerTranslateY = useRef(
+    new Animated.Value(getProductDrawerClosedOffset({ maxHeight: maxDrawerHeight }))
+  ).current;
+  const backdropOpacity = useRef(new Animated.Value(0)).current;
+  const drawerOffset = useRef(halfDrawerOffset);
+  const drawerStartOffset = useRef(halfDrawerOffset);
+  const resolvedDrawerHeight = drawerSnap === 'full' ? maxDrawerHeight : minDrawerHeight;
+  const unitDropdownPlacement = getUnitDropdownPlacement({
+    selectY: unitSelectLayout.y,
+    selectHeight: unitSelectLayout.height,
+    sheetHeight: resolvedDrawerHeight,
+    actionBarHeight,
+    dropdownHeight: UNIT_DROPDOWN_MAX_HEIGHT,
+  });
+
+  const snapDrawerTo = React.useCallback((snap: 'half' | 'full', animated = true) => {
+    const nextOffset = snap === 'full' ? 0 : halfDrawerOffset;
+    setDrawerSnap(snap);
+    drawerOffset.current = nextOffset;
+    if (!animated) {
+      drawerTranslateY.setValue(nextOffset);
+      return;
+    }
+    Animated.spring(drawerTranslateY, {
+      toValue: nextOffset,
+      useNativeDriver: true,
+      damping: 24,
+      stiffness: 240,
+      mass: 0.9,
+    }).start();
+  }, [drawerTranslateY, halfDrawerOffset]);
+
+  const closeDrawer = React.useCallback(() => {
+    Animated.parallel([
+      Animated.timing(drawerTranslateY, {
+        toValue: getProductDrawerClosedOffset({ maxHeight: maxDrawerHeight }),
+        duration: 220,
+        easing: Easing.in(Easing.cubic),
+        useNativeDriver: true,
+      }),
+      Animated.timing(backdropOpacity, {
+        toValue: 0,
+        duration: 160,
+        easing: Easing.in(Easing.quad),
+        useNativeDriver: true,
+      }),
+    ]).start(({ finished }) => {
+      if (finished) onClose();
+    });
+  }, [backdropOpacity, drawerTranslateY, maxDrawerHeight, onClose]);
+
+  const initialForm = React.useMemo(
+    () =>
+      product
+        ? {
+            name: product.name,
+            aliases: product.aliases || '',
+            unit: product.unit || 'kg',
+            price: product.unit_price ? product.unit_price.toString() : '',
+          }
+        : DEFAULT_FORM,
+    [product]
+  );
+
+  const isDirty =
+    name !== initialForm.name ||
+    aliases !== initialForm.aliases ||
+    unit !== initialForm.unit ||
+    price !== initialForm.price;
+
+  const requestClose = React.useCallback(() => {
+    if (!isDirty) {
+      closeDrawer();
+      return;
+    }
+
+    Alert.alert(
+      product ? 'Hủy cập nhật sản phẩm?' : 'Hủy tạo sản phẩm?',
+      'Thông tin đã nhập sẽ không được lưu.',
+      [
+        { text: 'Tiếp tục chỉnh sửa', style: 'cancel' },
+        { text: 'Hủy', style: 'destructive', onPress: closeDrawer },
+      ]
+    );
+  }, [closeDrawer, isDirty, product]);
+
+  const drawerPanResponder = React.useMemo(
+    () =>
+      PanResponder.create({
+        onStartShouldSetPanResponder: () => true,
+        onStartShouldSetPanResponderCapture: () => true,
+        onMoveShouldSetPanResponder: (_, gestureState) => Math.abs(gestureState.dy) > 2,
+        onMoveShouldSetPanResponderCapture: (_, gestureState) => Math.abs(gestureState.dy) > 2,
+        onShouldBlockNativeResponder: () => true,
+        onPanResponderTerminationRequest: () => false,
+        onPanResponderGrant: () => {
+          drawerStartOffset.current = drawerOffset.current;
+        },
+        onPanResponderMove: (_, gestureState) => {
+          const nextOffset = getProductDrawerDragOffset({
+              startOffset: drawerStartOffset.current,
+              dy: gestureState.dy,
+              minOffset: 0,
+              maxOffset: halfDrawerOffset,
+            });
+          drawerOffset.current = nextOffset;
+          drawerTranslateY.setValue(nextOffset);
+        },
+        onPanResponderRelease: (_, gestureState) => {
+          const action = getProductDrawerGestureAction(gestureState);
+          if (action === 'expand') {
+            snapDrawerTo('full');
+            return;
+          }
+          if (action === 'close') {
+            snapDrawerTo(drawerSnap);
+            requestClose();
+            return;
+          }
+          snapDrawerTo(drawerOffset.current < halfDrawerOffset / 2 ? 'full' : 'half');
+        },
+        onPanResponderTerminate: () => {
+          snapDrawerTo(drawerOffset.current < halfDrawerOffset / 2 ? 'full' : 'half');
+        },
+      }),
+    [drawerSnap, drawerTranslateY, halfDrawerOffset, requestClose, snapDrawerTo]
+  );
 
   useEffect(() => {
     if (!visible) return;
     setShowSuccess(false);
+    setSaving(false);
     setUnitOpen(false);
+    // Tạo mới: mặc định bật AI. Sửa: giữ alias thủ công hiện có, người dùng tự bật khi cần.
+    setUseAiAlias(!product);
+    setDrawerSnap('half');
+    drawerOffset.current = halfDrawerOffset;
+    drawerTranslateY.setValue(getProductDrawerClosedOffset({ maxHeight: maxDrawerHeight }));
+    backdropOpacity.setValue(0);
+    Animated.parallel([
+      Animated.timing(backdropOpacity, {
+        toValue: 1,
+        duration: 180,
+        easing: Easing.out(Easing.quad),
+        useNativeDriver: true,
+      }),
+      Animated.timing(drawerTranslateY, {
+        toValue: halfDrawerOffset,
+        duration: 260,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }),
+    ]).start();
     if (product) {
-      const parts = (product.aliases || '')
-        .split(',')
-        .map((s) => s.trim())
-        .filter(Boolean);
       setName(product.name);
-      setShortName(parts[0] || '');
-      setAliasList(parts.slice(1).join(', '));
+      setAliases(product.aliases || '');
       setUnit(product.unit || 'kg');
       setPrice(product.unit_price ? product.unit_price.toString() : '');
     } else {
       setName('');
-      setShortName('');
-      setAliasList('');
+      setAliases('');
       setUnit('kg');
       setPrice('');
     }
-  }, [product, visible]);
+  }, [backdropOpacity, drawerTranslateY, halfDrawerOffset, maxDrawerHeight, product, visible]);
 
-  const handleSave = () => {
+  const handleSave = async () => {
+    // Khi bật AI, bỏ qua validate/ nhập tay alias — backend sẽ tự sinh từ tên sản phẩm.
     if (!name.trim() || !price.trim()) {
       Alert.alert('Thiếu thông tin', 'Vui lòng nhập tên sản phẩm và giá bán.');
       return;
     }
-    onSave(name.trim(), mergeAliases(shortName, aliasList), unit.trim(), parseFloat(price) || 0);
-    setShowSuccess(true);
+    if (saving) return;
+
+    try {
+      setSaving(true);
+      await onSave(
+        name.trim(),
+        useAiAlias ? '' : aliases.trim(),
+        unit.trim(),
+        parseFloat(price) || 0,
+        useAiAlias
+      );
+      setShowSuccess(true);
+    } catch (error) {
+      const message =
+        error instanceof Error && error.message
+          ? error.message
+          : 'Không thể lưu sản phẩm. Vui lòng thử lại.';
+      Alert.alert('Không thể lưu', message);
+    } finally {
+      setSaving(false);
+    }
   };
 
   const resetForm = () => {
     setName('');
-    setShortName('');
-    setAliasList('');
+    setAliases('');
     setUnit('kg');
     setPrice('');
+    setUseAiAlias(true);
     setShowSuccess(false);
   };
 
   return (
-    <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
+    <Modal visible={visible} animationType="none" transparent onRequestClose={requestClose}>
       {showSuccess ? (
         <SuccessView onHome={onClose} onAddAnother={resetForm} />
       ) : (
-        <View style={styles.container}>
-          {/* Header */}
-          <View style={styles.header}>
-            <TouchableOpacity style={styles.backBtn} onPress={onClose}>
-              <MaterialIcons name="arrow-back" size={24} color={colors.white} />
-            </TouchableOpacity>
-            <Text style={styles.headerTitle}>{product ? 'Sửa sản phẩm' : 'Sản phẩm mới'}</Text>
-          </View>
-
-          <ScrollView
-            contentContainerStyle={styles.body}
-            keyboardShouldPersistTaps="handled"
-            showsVerticalScrollIndicator={false}
+        <View style={styles.overlayRoot}>
+          <Animated.View
+            testID="product-form-backdrop-dim"
+            pointerEvents="none"
+            style={[styles.backdropDim, { opacity: backdropOpacity }]}
+          />
+          <TouchableOpacity
+            testID="product-form-backdrop"
+            style={styles.backdropHitArea}
+            activeOpacity={1}
+            onPress={requestClose}
+          />
+          <Animated.View
+            testID="product-form-sheet"
+            style={[
+              styles.sheet,
+              { height: maxDrawerHeight, transform: [{ translateY: drawerTranslateY }] },
+            ]}
           >
-            {/* Image upload (placeholder) */}
-            <TouchableOpacity
-              activeOpacity={0.8}
-              style={styles.imageUpload}
-              onPress={() => Alert.alert('Hình ảnh', 'Tính năng chọn ảnh sẽ sớm được bổ sung.')}
+            <View
+              testID="product-drawer-handle"
+              style={styles.dragHandleWrap}
+              {...drawerPanResponder.panHandlers}
             >
-              <View style={styles.imageCircle}>
-                <MaterialIcons name="add-a-photo" size={40} color={colors.primary} />
-              </View>
-              <Text style={styles.imageTitle}>Thêm hình ảnh sản phẩm</Text>
-              <Text style={styles.imageSubtitle}>Chụp ảnh hoặc chọn từ thư viện</Text>
-            </TouchableOpacity>
+              <View style={styles.dragHandle} />
+            </View>
 
-            {/* Name + short name card */}
-            <View style={styles.fieldCard}>
-              <View style={styles.fieldGroup}>
-                <View style={styles.fieldLabelRow}>
-                  <MaterialIcons name="inventory-2" size={20} color={colors.primary} />
-                  <Text style={styles.fieldLabel}>Tên sản phẩm</Text>
-                </View>
+            <ScrollView
+              testID="product-form-scroll"
+              style={styles.sheetScroll}
+              contentContainerStyle={[styles.sheetBody, unitOpen && styles.sheetBodyDropdownOpen]}
+              keyboardShouldPersistTaps="handled"
+              showsVerticalScrollIndicator={false}
+            >
+              <View style={styles.sheetHeader}>
+                <Text style={styles.sheetTitle}>{product ? 'Sửa sản phẩm' : 'Thêm sản phẩm mới'}</Text>
+                <TouchableOpacity
+                  testID="product-form-close-button"
+                  style={styles.closeBtn}
+                  onPress={requestClose}
+                  activeOpacity={0.85}
+                >
+                  <MaterialIcons name="close" size={30} color={colors.onSurfaceVariant} />
+                </TouchableOpacity>
+              </View>
+
+              <View style={styles.formGroup}>
+                <Text style={styles.formLabel}>Tên sản phẩm</Text>
                 <TextInput
-                  style={styles.fieldInputLg}
-                  placeholder="Ví dụ: Gạo ST25"
-                  placeholderTextColor={colors.outlineVariant}
+                  style={styles.formInput}
+                  placeholder={product ? 'VD: Gạo ST25 túi 5kg' : 'VD: Gạo ST25'}
+                  placeholderTextColor="#C5C6CF"
                   value={name}
                   onChangeText={setName}
                 />
               </View>
-              <View style={styles.fieldDivider} />
-              <View style={styles.fieldGroup}>
-                <View style={styles.fieldLabelRow}>
-                  <MaterialIcons name="label" size={20} color={colors.primary} />
-                  <Text style={styles.fieldLabel}>Tên viết tắt</Text>
-                </View>
-                <TextInput
-                  style={styles.fieldInputMd}
-                  placeholder="Ví dụ: ST25"
-                  placeholderTextColor={colors.outlineVariant}
-                  value={shortName}
-                  onChangeText={setShortName}
-                />
-              </View>
-            </View>
 
-            {/* Price + unit row */}
-            <View style={styles.priceRow}>
-              <View style={[styles.fieldCard, { flex: 6 }]}>
-                <View style={styles.fieldLabelRow}>
-                  <MaterialIcons name="payments" size={20} color={colors.primary} />
-                  <Text style={styles.fieldLabel}>Giá bán (đ)</Text>
+              <View style={styles.formGroup}>
+                <View style={styles.aliasLabelRow}>
+                  <Text style={styles.formLabel}>{product ? 'Tên gợi nhớ (Alias)' : 'Tên gọi tắt (Alias)'}</Text>
+                  <TouchableOpacity
+                    testID="product-alias-ai-toggle"
+                    style={styles.aiToggle}
+                    activeOpacity={0.8}
+                    onPress={() => setUseAiAlias((value) => !value)}
+                    accessibilityRole="checkbox"
+                    accessibilityState={{ checked: useAiAlias }}
+                  >
+                    <MaterialIcons
+                      testID="product-alias-ai-checkbox"
+                      name={useAiAlias ? 'check-box' : 'check-box-outline-blank'}
+                      size={22}
+                      color={useAiAlias ? colors.primary : colors.onSurfaceVariant}
+                    />
+                    <Text style={styles.aiToggleText}>Sử dụng AI</Text>
+                  </TouchableOpacity>
                 </View>
-                <View style={styles.priceInputRow}>
+                <View style={styles.aliasInputWrap}>
+                  {!product ? (
+                    <MaterialIcons
+                      name={useAiAlias ? 'auto-awesome' : 'mic-none'}
+                      size={22}
+                      color={useAiAlias ? colors.primary : '#C5C6CF'}
+                      style={styles.aliasIcon}
+                    />
+                  ) : null}
                   <TextInput
-                    style={styles.priceInput}
-                    keyboardType="numeric"
-                    placeholder="0"
-                    placeholderTextColor={colors.outlineVariant}
-                    value={price}
-                    onChangeText={setPrice}
+                    testID="product-alias-input"
+                    style={[
+                      styles.formInput,
+                      !product && styles.aliasInput,
+                      useAiAlias && styles.formInputDisabled,
+                    ]}
+                    placeholder={
+                      useAiAlias
+                        ? 'AI sẽ tự tạo tên gọi tắt từ tên sản phẩm'
+                        : product
+                          ? 'Nhập tên gọi khác, cách nhau bằng dấu phẩy'
+                          : 'VD: st25, gao thom, gao deo'
+                    }
+                    placeholderTextColor="#C5C6CF"
+                    value={useAiAlias ? '' : aliases}
+                    onChangeText={setAliases}
+                    editable={!useAiAlias}
                   />
-                  <Text style={styles.priceSuffix}>VNĐ</Text>
                 </View>
-              </View>
-              <View style={[styles.fieldCard, { flex: 4, zIndex: 20 }]}>
-                <Text style={styles.fieldLabel}>Đơn vị tính</Text>
-                <TouchableOpacity style={styles.unitSelect} onPress={() => setUnitOpen((o) => !o)}>
-                  <Text style={styles.unitValue}>{unit}</Text>
-                  <MaterialIcons
-                    name={unitOpen ? 'expand-less' : 'expand-more'}
-                    size={22}
-                    color={colors.outlineVariant}
-                  />
-                </TouchableOpacity>
-                {unitOpen ? (
-                  <View style={styles.unitDropdown}>
-                    {UNITS.map((u) => (
-                      <TouchableOpacity
-                        key={u}
-                        style={styles.unitOption}
-                        onPress={() => { setUnit(u); setUnitOpen(false); }}
-                      >
-                        <Text style={[styles.unitOptionText, u === unit && styles.unitOptionActive]}>{u}</Text>
-                      </TouchableOpacity>
-                    ))}
-                  </View>
+                {useAiAlias ? (
+                  <Text testID="product-alias-ai-hint" style={styles.aiHint}>
+                    Alias sẽ được AI phân tích và tạo tự động từ tên sản phẩm khi lưu.
+                  </Text>
                 ) : null}
               </View>
-            </View>
 
-            {/* AI helper */}
-            <View style={styles.aiCard}>
-              <View style={styles.aiHeader}>
-                <View style={styles.fieldLabelRow}>
-                  <MaterialIcons name="psychology" size={20} color={colors.primary} />
-                  <Text style={styles.aiLabel}>Từ viết tắt / Alias</Text>
+              <View testID="product-inline-row" style={styles.inlineRow}>
+                <View testID="product-price-field" style={styles.inlineField}>
+                  <Text style={styles.formLabel}>Giá bán</Text>
+                  <View style={styles.priceInputWrap}>
+                    <TextInput
+                      style={styles.priceInput}
+                      keyboardType="numeric"
+                      placeholder="0"
+                      placeholderTextColor="#C5C6CF"
+                      value={price}
+                      onChangeText={setPrice}
+                    />
+                    <Text style={styles.priceSuffix}>đ</Text>
+                  </View>
                 </View>
-                <MaterialIcons name="auto-awesome" size={20} color={colors.primary} />
-              </View>
-              <TextInput
-                style={styles.aiInput}
-                placeholder="ST, ST25, Gạo sóc..."
-                placeholderTextColor={colors.textSecondary}
-                value={aliasList}
-                onChangeText={setAliasList}
-              />
-              <View style={styles.aiHintRow}>
-                <MaterialIcons name="lightbulb" size={16} color={colors.primary} />
-                <Text style={styles.aiHint}>
-                  Giúp AI nhận diện giọng nói chính xác hơn khi bạn đọc tên tắt.
-                </Text>
-              </View>
-            </View>
 
-            {/* Info note */}
-            <View style={styles.infoNote}>
-              <MaterialIcons name="info" size={18} color={colors.textSecondary} />
-              <Text style={styles.infoText}>Sản phẩm sẽ tự động đồng bộ lên báo cáo tháng.</Text>
-            </View>
+                <View
+                  testID="product-unit-field"
+                  style={[styles.inlineField, styles.unitField]}
+                  onLayout={(event) =>
+                    setUnitSelectLayout({
+                      y: event.nativeEvent.layout.y,
+                      height: event.nativeEvent.layout.height,
+                    })
+                  }
+                >
+                  <Text style={styles.formLabel}>Đơn vị</Text>
+                  <TouchableOpacity
+                    testID="product-unit-select"
+                    style={styles.formInputBox}
+                    onPress={() => setUnitOpen((open) => !open)}
+                    activeOpacity={0.85}
+                  >
+                    <Text style={styles.formInputText}>{unit}</Text>
+                    <MaterialIcons
+                      testID="product-unit-arrow"
+                      name={unitOpen ? 'expand-less' : 'expand-more'}
+                      size={28}
+                      color={colors.onSurfaceVariant}
+                    />
+                  </TouchableOpacity>
+                  {unitOpen ? (
+                    <View
+                      testID="product-unit-dropdown"
+                      style={[
+                        styles.unitDropdown,
+                        unitDropdownPlacement === 'above' ? styles.unitDropdownAbove : styles.unitDropdownBelow,
+                      ]}
+                    >
+                      <ScrollView
+                        testID="product-unit-dropdown-scroll"
+                        nestedScrollEnabled
+                        keyboardShouldPersistTaps="handled"
+                        showsVerticalScrollIndicator={UNITS.length > 5}
+                      >
+                        {UNITS.map((u) => (
+                          <TouchableOpacity
+                            key={u}
+                            style={styles.unitOption}
+                            onPress={() => { setUnit(u); setUnitOpen(false); }}
+                          >
+                            <Text style={[styles.unitOptionText, u === unit && styles.unitOptionActive]}>{u}</Text>
+                          </TouchableOpacity>
+                        ))}
+                      </ScrollView>
+                    </View>
+                  ) : null}
+                </View>
+              </View>
+            </ScrollView>
 
-            {/* Save */}
-            <TouchableOpacity style={styles.saveBtn} activeOpacity={0.9} onPress={handleSave}>
-              <Text style={styles.saveText}>Lưu sản phẩm</Text>
-              <MaterialIcons name="check-circle" size={22} color={colors.white} />
-            </TouchableOpacity>
-          </ScrollView>
+            <View
+              testID="product-form-action-bar"
+              style={[styles.actionBar, !product && styles.createActionBar]}
+              onLayout={(event) => setActionBarHeight(event.nativeEvent.layout.height)}
+            >
+              {product ? (
+                <TouchableOpacity
+                  testID="product-delete-button"
+                  style={styles.deleteAction}
+                  activeOpacity={0.9}
+                  onPress={() => product && onDelete?.(product)}
+                >
+                  <MaterialIcons
+                    testID="product-delete-icon"
+                    name="delete-outline"
+                    size={16}
+                    color={colors.white}
+                    style={styles.actionIcon}
+                  />
+                  <Text testID="product-delete-label" style={styles.deleteActionText}>Xóa</Text>
+                </TouchableOpacity>
+              ) : null}
+              <TouchableOpacity
+                testID="product-save-button"
+                style={[styles.saveBtn, product && styles.saveBtnCompact, saving && styles.saveBtnDisabled]}
+                activeOpacity={0.9}
+                onPress={handleSave}
+                disabled={saving}
+              >
+                {saving ? (
+                  <>
+                    <ActivityIndicator testID="product-save-spinner" size="small" color={colors.white} />
+                    <Text testID="product-save-label" style={styles.saveText}>
+                      {useAiAlias ? 'Đang tạo Alias…' : 'Đang lưu…'}
+                    </Text>
+                  </>
+                ) : (
+                  <>
+                    <MaterialIcons
+                      testID="product-save-icon"
+                      name="save"
+                      size={16}
+                      color={colors.white}
+                      style={styles.actionIcon}
+                    />
+                    <Text testID="product-save-label" style={styles.saveText}>{product ? 'Lưu thay đổi' : 'Tạo sản phẩm'}</Text>
+                  </>
+                )}
+              </TouchableOpacity>
+            </View>
+          </Animated.View>
         </View>
       )}
     </Modal>
   );
 };
 
-const FIREWORK_COLORS = ['#10B981', '#059669', '#34D399', '#6EE7B7', '#F59E0B', '#FBBF24'];
+const FIREWORK_COLORS = ['#05163A', '#B29469', '#62B3EC', '#76AAD1', '#EAF4FB', '#F59E0B'];
 
 // Một chùm pháo hoa: các hạt nổ tỏa tròn từ một điểm, rơi nhẹ theo trọng lực rồi mờ dần.
-const Burst: React.FC<{ originX: string; originY: string; count: number; delay: number }> = ({
+const Burst: React.FC<{
+  originX: `${number}%`;
+  originY: `${number}%`;
+  count: number;
+  delay: number;
+}> = ({
   originX,
   originY,
   count,
@@ -391,80 +729,195 @@ const SuccessView: React.FC<{ onHome: () => void; onAddAnother: () => void }> = 
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.slateBg },
-  // Header
-  header: {
+  overlayRoot: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    backgroundColor: 'transparent',
+  },
+  backdropDim: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0, 30, 47, 0.4)',
+  },
+  backdropHitArea: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  sheet: {
+    width: '100%',
+    overflow: 'visible',
+    borderTopLeftRadius: 12,
+    borderTopRightRadius: 12,
+    backgroundColor: '#F6FAFF',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -10 },
+    shadowOpacity: 0.1,
+    shadowRadius: 40,
+    elevation: 16,
+  },
+  dragHandleWrap: {
+    width: '100%',
+    minHeight: 56,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingTop: 8,
+    paddingBottom: 10,
+  },
+  dragHandle: {
+    width: 48,
+    height: 5,
+    borderRadius: 999,
+    backgroundColor: '#C5C6CF',
+  },
+  sheetScroll: {
+    flex: 1,
+  },
+  sheetBody: {
+    paddingHorizontal: 16,
+    paddingBottom: 16,
+    gap: 16,
+  },
+  sheetBodyDropdownOpen: {
+    paddingBottom: 180,
+  },
+  sheetHeader: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 4,
+  },
+  sheetTitle: {
+    flex: 1,
+    fontFamily: fontFamily.jakartaSemiBold,
+    fontSize: 24,
+    lineHeight: 32,
+    color: '#001E2F',
+  },
+  closeBtn: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#D5EBFF',
+  },
+  formGroup: {
     gap: 8,
-    backgroundColor: colors.primaryContainer,
-    paddingTop: 52,
-    paddingBottom: 16,
+  },
+  formLabel: {
+    fontFamily: fontFamily.interMedium,
+    fontSize: 14,
+    lineHeight: 20,
+    color: '#45464E',
+  },
+  formInput: {
+    minHeight: 56,
+    borderRadius: 8,
     paddingHorizontal: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 6,
-    elevation: 4,
+    paddingVertical: 0,
+    backgroundColor: '#E0F0FF',
+    fontFamily: fontFamily.interRegular,
+    fontSize: 16,
+    lineHeight: 24,
+    color: '#001E2F',
   },
-  backBtn: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
-  headerTitle: { ...typography.headlineMd, color: colors.white },
-  body: { padding: 16, gap: 16, paddingBottom: 48 },
-  // Image upload
-  imageUpload: {
-    height: 200,
-    borderRadius: 12,
-    backgroundColor: colors.white,
-    borderWidth: 2,
-    borderStyle: 'dashed',
-    borderColor: colors.outlineVariant,
+  aliasLabelRow: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    gap: 12,
+    justifyContent: 'space-between',
   },
-  imageCircle: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: colors.primarySoft,
+  aiToggle: {
+    flexDirection: 'row',
     alignItems: 'center',
+    gap: 6,
+    paddingVertical: 4,
+    paddingLeft: 8,
+  },
+  aiToggleText: {
+    fontFamily: fontFamily.interSemiBold,
+    fontSize: 14,
+    lineHeight: 20,
+    color: colors.primary,
+  },
+  formInputDisabled: {
+    backgroundColor: '#EDF2F7',
+    color: '#9AA5B1',
+  },
+  aiHint: {
+    fontFamily: fontFamily.interRegular,
+    fontSize: 13,
+    lineHeight: 18,
+    color: colors.onSurfaceVariant,
+  },
+  aliasInputWrap: {
+    position: 'relative',
     justifyContent: 'center',
   },
-  imageTitle: { ...typography.headlineMd, color: colors.onSurface },
-  imageSubtitle: { ...typography.bodySm, color: colors.textSecondary },
-  // Field cards
-  fieldCard: {
-    backgroundColor: colors.white,
-    borderRadius: 12,
-    padding: 16,
+  saveBtnDisabled: {
+    opacity: 0.7,
+  },
+  aliasIcon: {
+    position: 'absolute',
+    left: 16,
+    zIndex: 2,
+  },
+  aliasInput: {
+    paddingLeft: 48,
+  },
+  inlineRow: {
+    flexDirection: 'row',
     gap: 16,
-    borderWidth: 1,
-    borderColor: colors.outlineVariantSoft,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.04,
-    shadowRadius: 4,
-    elevation: 1,
+    alignItems: 'flex-start',
   },
-  fieldGroup: { gap: 8 },
-  fieldLabelRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  fieldLabel: { ...typography.labelMd, color: colors.primary },
-  fieldInputLg: { ...typography.headlineMd, color: colors.onSurface, padding: 0 },
-  fieldInputMd: { ...typography.bodyLg, color: colors.onSurface, padding: 0 },
-  fieldDivider: { height: 1, backgroundColor: colors.outlineVariantSoft },
-  // Price + unit
-  priceRow: { flexDirection: 'row', gap: 16, alignItems: 'flex-start' },
-  priceInputRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  priceInput: { ...typography.headlineLgMobile, color: colors.onSurface, padding: 0, flex: 1 },
-  priceSuffix: { ...typography.headlineMd, color: colors.outlineVariant },
-  unitSelect: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  unitValue: { ...typography.bodyLg, color: colors.onSurface },
+  inlineField: {
+    flex: 1,
+    gap: 8,
+  },
+  unitField: {
+    zIndex: 40,
+  },
+  formInputBox: {
+    minHeight: 56,
+    borderRadius: 8,
+    paddingHorizontal: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#E0F0FF',
+  },
+  formInputText: {
+    fontFamily: fontFamily.interRegular,
+    fontSize: 16,
+    lineHeight: 24,
+    color: '#001E2F',
+  },
+  priceInputWrap: {
+    minHeight: 56,
+    borderRadius: 8,
+    paddingHorizontal: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#E0F0FF',
+  },
+  priceInput: {
+    flex: 1,
+    padding: 0,
+    textAlign: 'right',
+    fontFamily: fontFamily.interRegular,
+    fontSize: 16,
+    lineHeight: 24,
+    color: '#001E2F',
+  },
+  priceSuffix: {
+    marginLeft: 12,
+    fontFamily: fontFamily.interRegular,
+    fontSize: 16,
+    lineHeight: 24,
+    color: '#45464E',
+  },
   unitDropdown: {
     position: 'absolute',
-    top: '100%',
     left: 0,
     right: 0,
-    marginTop: 4,
+    maxHeight: UNIT_DROPDOWN_MAX_HEIGHT,
     backgroundColor: colors.white,
     borderRadius: 12,
     borderWidth: 1,
@@ -475,53 +928,74 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.12,
     shadowRadius: 12,
     elevation: 8,
+    zIndex: 50,
+  },
+  unitDropdownBelow: {
+    top: 84,
+  },
+  unitDropdownAbove: {
+    bottom: 64,
   },
   unitOption: { paddingVertical: 10, paddingHorizontal: 16 },
   unitOptionText: { ...typography.bodyMd, color: colors.onSurface },
   unitOptionActive: { color: colors.primary, fontFamily: fontFamily.interSemiBold },
-  // AI helper
-  aiCard: {
-    backgroundColor: colors.primarySoftFaint,
-    borderRadius: 12,
-    padding: 16,
-    gap: 8,
-    borderWidth: 1,
-    borderColor: colors.primaryContainerBorder,
+  actionBar: {
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 16,
+    backgroundColor: colors.white,
+    flexDirection: 'row',
+    gap: 16,
   },
-  aiHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  aiLabel: { ...typography.labelMd, color: colors.onPrimaryContainer },
-  aiInput: { ...typography.bodyMd, color: colors.onSurface, padding: 0 },
-  aiHintRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, marginTop: 4 },
-  aiHint: { ...typography.labelSm, color: colors.onSurfaceVariant, flex: 1, lineHeight: 16 },
-  // Info note
-  infoNote: {
+  createActionBar: {
+    paddingTop: 18,
+    paddingBottom: 66,
+    backgroundColor: '#F6FAFF',
+  },
+  saveBtn: {
+    flex: 1,
+    minHeight: 56,
+    borderRadius: 12,
+    backgroundColor: colors.primary,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    padding: 16,
-    backgroundColor: colors.white,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: colors.outlineVariantSoft,
+    justifyContent: 'center',
+    gap: 10,
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 12,
+    elevation: 4,
   },
-  infoText: { ...typography.bodySm, color: colors.onSurfaceVariant, flex: 1 },
-  // Save button
-  saveBtn: {
-    marginTop: 8,
-    height: 56,
-    borderRadius: 12,
-    backgroundColor: colors.primaryContainer,
+  saveBtnCompact: {
+    borderRadius: 8,
+  },
+  saveText: {
+    fontFamily: fontFamily.interSemiBold,
+    fontSize: 16,
+    lineHeight: 24,
+    color: colors.white,
+  },
+  actionIcon: {
+    fontSize: 16,
+    lineHeight: 24,
+  },
+  deleteAction: {
+    flex: 1,
+    minHeight: 56,
+    borderRadius: 8,
+    backgroundColor: colors.errorCrimson,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    shadowColor: colors.primaryContainer,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.25,
-    shadowRadius: 12,
-    elevation: 4,
   },
-  saveText: { ...typography.headlineMd, color: colors.white },
+  deleteActionText: {
+    fontFamily: fontFamily.interSemiBold,
+    fontSize: 16,
+    lineHeight: 24,
+    color: colors.white,
+  },
   // Success
   successContainer: { flex: 1, backgroundColor: colors.slateBg },
   successCenter: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32 },

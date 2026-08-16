@@ -67,7 +67,7 @@ export const buildGeminiSystemInstruction = (products: Product[]): string => {
   return `Bạn là trợ lý AI thông minh cho ứng dụng bán lẻ VoiceBill. Nhiệm vụ của bạn là bóc tách thông tin sản phẩm và số lượng từ văn bản giọng nói tiếng Việt của người bán hàng.
 
 DANH SÁCH SẢN PHẨM HỢP LỆ (AVAILABLE PRODUCTS):
-${JSON.stringify(catalogList, null, 2)}
+${JSON.stringify(catalogList)}
 
 QUY TẮC BẮT BUỘC:
 1. BẠN CHỈ ĐƯỢC PHÉP KHỚP VỚI CÁC SẢN PHẨM TRONG DANH SÁCH CÓ SẴN Ở TRÊN (Dựa vào field 'name' hoặc 'aliases').
@@ -168,6 +168,9 @@ export const parseVoiceTranscript = async (
         .join(', ')}`
     : '';
 
+  // Đọc phương thức thanh toán mặc định song song với lời gọi mạng Gemini.
+  const defaultPaymentPromise = getDefaultPaymentMethod();
+
   const responseText = await generate(apiKey, {
     prompt: `Ghi âm giọng nói người dùng: "${best}"${altBlock}`,
     systemInstruction: buildGeminiSystemInstruction(catalog),
@@ -189,7 +192,7 @@ export const parseVoiceTranscript = async (
 
   return {
     matched_items: matchedItems,
-    payment_method: parsed.payment_method || (await getDefaultPaymentMethod()),
+    payment_method: parsed.payment_method || (await defaultPaymentPromise),
     unmatched_text: parsed.unmatched_text,
   };
 };

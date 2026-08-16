@@ -1,5 +1,5 @@
 import React from 'react';
-import { Alert } from 'react-native';
+import { Alert, StyleSheet } from 'react-native';
 import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
 import { HomeScreen } from '../src/screens/HomeScreen';
 import { parseVoiceTranscript } from '../src/services/aiParser';
@@ -11,6 +11,15 @@ jest.mock('../src/services/aiParser');
 jest.mock('../src/services/localInvoiceParser');
 jest.mock('../src/services/db', () => ({
   getProductsFromDB: jest.fn(() => []),
+  saveInvoiceToDB: jest.fn(),
+  calculateInvoiceTotals: () => ({
+    total_quantity: 0,
+    subtotal_amount: 0,
+    discount_amount: 0,
+    final_amount: 0,
+    paid_amount: 0,
+    change_amount: 0,
+  }),
 }));
 jest.mock('../src/components/DraftInvoiceModal', () => ({
   DraftInvoiceModal: () => null,
@@ -196,5 +205,56 @@ describe('HomeScreen Gemini configuration', () => {
       ).toBeTruthy()
     );
   });
-});
 
+  it('keeps the microphone pulse animation centered in a shared stage', () => {
+    const { getByTestId } = render(<HomeScreen onOpenSettings={jest.fn()} />);
+
+    const stage = getByTestId('voice-microphone-stage');
+    const outerRing = getByTestId('voice-pulse-ring-outer');
+    const middleRing = getByTestId('voice-pulse-ring-middle');
+
+    expect(StyleSheet.flatten(stage.props.style)).toMatchObject({
+      width: 256,
+      height: 256,
+      alignItems: 'center',
+      justifyContent: 'center',
+    });
+    expect(StyleSheet.flatten(outerRing.props.style)).toMatchObject({
+      top: 0,
+      left: 0,
+    });
+    expect(StyleSheet.flatten(middleRing.props.style)).toMatchObject({
+      top: 36,
+      left: 36,
+    });
+  });
+
+  it('renders the tablet split layout with the invoice panel at >=1024px', () => {
+    const rn = require('react-native');
+    const spy = jest
+      .spyOn(rn, 'useWindowDimensions')
+      .mockReturnValue({ width: 1024, height: 768, scale: 2, fontScale: 1 });
+
+    const { getByTestId, queryByTestId } = render(<HomeScreen onOpenSettings={jest.fn()} />);
+
+    expect(getByTestId('home-tablet-layout')).toBeTruthy();
+    expect(getByTestId('tablet-invoice-panel')).toBeTruthy();
+    // Layout mobile (scroll body) không render ở tablet.
+    expect(queryByTestId('home-scroll-body')).toBeNull();
+
+    spy.mockRestore();
+  });
+
+  it('uses compact vertical spacing so suggestions fit before scrolling is needed', () => {
+    const { getByTestId } = render(<HomeScreen onOpenSettings={jest.fn()} />);
+
+    expect(StyleSheet.flatten(getByTestId('home-scroll-body').props.contentContainerStyle)).toMatchObject({
+      paddingTop: 48,
+      flexGrow: 1,
+    });
+    expect(StyleSheet.flatten(getByTestId('voice-transcript-card').props.style)).toMatchObject({
+      minHeight: 188,
+      marginBottom: 28,
+    });
+  });
+});

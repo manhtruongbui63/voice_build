@@ -20,6 +20,15 @@ const mockProducts = [
 
 jest.mock('../src/services/db', () => ({
   getProductsFromDB: jest.fn(() => mockProducts),
+  saveInvoiceToDB: jest.fn(),
+  calculateInvoiceTotals: () => ({
+    total_quantity: 0,
+    subtotal_amount: 0,
+    discount_amount: 0,
+    final_amount: 0,
+    paid_amount: 0,
+    change_amount: 0,
+  }),
 }));
 jest.mock('../src/components/DraftInvoiceModal', () => ({
   DraftInvoiceModal: () => null,
@@ -48,6 +57,17 @@ jest.mock('../src/hooks/useVoiceInvoiceRecognition', () => ({
     };
   },
 }));
+
+// Transcript được render thành nhiều <Text> (để highlight keyword),
+// nên ghép lại toàn bộ chuỗi con để kiểm tra nội dung.
+const flattenText = (node: unknown): string => {
+  if (node == null || node === false) return '';
+  if (typeof node === 'string') return node;
+  if (typeof node === 'number') return String(node);
+  if (Array.isArray(node)) return node.map(flattenText).join('');
+  const props = (node as { props?: { children?: unknown } }).props;
+  return props ? flattenText(props.children) : '';
+};
 
 const mockedGetKey = getGeminiApiKey as jest.MockedFunction<typeof getGeminiApiKey>;
 const mockedParse = parseVoiceTranscript as jest.MockedFunction<typeof parseVoiceTranscript>;
@@ -79,13 +99,13 @@ describe('HomeScreen native Vietnamese speech recognition', () => {
 
   it('renders interim words without parsing', () => {
     mockInterimTranscript = 'bán cho chị một ký gạo ST';
-    const { getByText } = render(<HomeScreen onOpenSettings={jest.fn()} />);
-    expect(getByText('bán cho chị một ký gạo ST')).toBeTruthy();
+    const { getByTestId } = render(<HomeScreen onOpenSettings={jest.fn()} />);
+    expect(flattenText(getByTestId('voice-transcript-text'))).toContain('bán cho chị một ký gạo ST');
     expect(mockedParse).not.toHaveBeenCalled();
   });
 
   it('parses the final transcript with the request-local key', async () => {
-    const { getByTestId, getByText } = render(
+    const { getByTestId } = render(
       <HomeScreen onOpenSettings={jest.fn()} />
     );
     await act(async () => {
@@ -101,11 +121,11 @@ describe('HomeScreen native Vietnamese speech recognition', () => {
         'stored-test-key'
       )
     );
-    expect(getByText('bán cho chị một ký gạo ST')).toBeTruthy();
+    expect(flattenText(getByTestId('voice-transcript-text'))).toContain('bán cho chị một ký gạo ST');
   });
 
   it('canonicalizes the displayed transcript against the catalog', async () => {
-    const { getByTestId, getByText } = render(
+    const { getByTestId } = render(
       <HomeScreen onOpenSettings={jest.fn()} />
     );
     await act(async () => {
@@ -121,7 +141,28 @@ describe('HomeScreen native Vietnamese speech recognition', () => {
         'stored-test-key'
       )
     );
-    expect(getByText('1 kg Bắc Hương')).toBeTruthy();
+    expect(flattenText(getByTestId('voice-transcript-text'))).toContain('1 kg Bắc Hương');
+  });
+
+  it('clears the previous transcript when starting a new voice session', async () => {
+    const { getByTestId, queryByTestId } = render(<HomeScreen onOpenSettings={jest.fn()} />);
+
+    await act(async () => {
+      fireEvent.press(getByTestId('voice-microphone-button'));
+    });
+    await act(async () => {
+      mockHandlers.onFinalTranscript(['1 kg bắc hướng']);
+    });
+    await waitFor(() =>
+      expect(flattenText(getByTestId('voice-transcript-text'))).toContain('1 kg Bắc Hương')
+    );
+
+    // Bấm mic lần nữa để bắt đầu hóa đơn mới -> transcript cũ phải bị xóa.
+    await act(async () => {
+      fireEvent.press(getByTestId('voice-microphone-button'));
+    });
+
+    expect(queryByTestId('voice-transcript-text')).toBeNull();
   });
 
   it('uses a second microphone tap to stop an active session', () => {

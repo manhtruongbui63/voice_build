@@ -4,10 +4,10 @@
 #import <React/RCTLinkingManager.h>
 #import <React/RCTRootView.h>
 
-// Nền xanh khớp splash (#006C49) — tránh chớp trắng trước khi JS vẽ khung đầu tiên.
+// Nền Deep Navy khớp splash (#05163A) — tránh chớp trắng trước khi JS vẽ khung đầu tiên.
 static UIColor *VoiceBillSplashColor(void)
 {
-  return [UIColor colorWithRed:0.0 green:108.0 / 255.0 blue:73.0 / 255.0 alpha:1.0];
+  return [UIColor colorWithRed:5.0 / 255.0 green:22.0 / 255.0 blue:58.0 / 255.0 alpha:1.0];
 }
 
 @implementation AppDelegate
@@ -26,7 +26,7 @@ static UIColor *VoiceBillSplashColor(void)
   return didFinish;
 }
 
-// Nền RN root view = xanh để không lộ nền trắng trước khi React vẽ.
+// Nền RN root view = navy để không lộ nền trắng trước khi React vẽ.
 - (void)customizeRootView:(RCTRootView *)rootView
 {
   [super customizeRootView:rootView];

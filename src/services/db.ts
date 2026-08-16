@@ -1,7 +1,16 @@
 import * as SQLite from 'expo-sqlite';
 import { Product, Invoice, InvoiceItem } from '../types';
+import { ProductImportRow } from './productCsvImportService';
+import {
+  formatHoChiMinhDateKey,
+  formatHoChiMinhDateTime,
+  getHoChiMinhDaysAgoDateKey,
+  getHoChiMinhMonthStartDateKey,
+} from '../utils/hoChiMinhTime';
 
 let db: SQLite.SQLiteDatabase | null = null;
+
+const INVOICE_CREATED_AT_HCM_MIGRATION_KEY = 'invoice_created_at_asia_ho_chi_minh_v1';
 
 export const getDB = () => {
   if (!db) {
@@ -46,6 +55,33 @@ export const migrateInvoiceItemsProductFk = (
     COMMIT;
   `);
   database.execSync('PRAGMA foreign_keys = ON;');
+};
+
+export const migrateInvoiceCreatedAtToHoChiMinh = (
+  database: SQLite.SQLiteDatabase
+): void => {
+  database.execSync(`
+    CREATE TABLE IF NOT EXISTS app_meta (
+      key TEXT PRIMARY KEY,
+      value TEXT NOT NULL
+    );
+  `);
+
+  const rows = database.getAllSync<{ value: string }>(
+    'SELECT value FROM app_meta WHERE key = ?',
+    [INVOICE_CREATED_AT_HCM_MIGRATION_KEY]
+  );
+  if (rows.some((row) => row.value === 'done')) return;
+
+  database.runSync(`
+    UPDATE invoices
+    SET created_at = datetime(created_at, '+7 hours')
+    WHERE created_at IS NOT NULL
+  `);
+  database.runSync(
+    'INSERT OR REPLACE INTO app_meta (key, value) VALUES (?, ?)',
+    [INVOICE_CREATED_AT_HCM_MIGRATION_KEY, 'done']
+  );
 };
 
 export const initDB = async () => {
@@ -96,6 +132,7 @@ export const initDB = async () => {
   }
 
   migrateInvoiceItemsProductFk(database);
+  migrateInvoiceCreatedAtToHoChiMinh(database);
 };
 
 export const calculateInvoiceTotals = (
@@ -139,6 +176,49 @@ export const updateProductInDB = (id: number, name: string, aliases: string, uni
   );
 };
 
+const normalizeProductName = (name: string) =>
+  name.trim().toLocaleLowerCase('vi-VN').normalize('NFC');
+
+export const importProductsFromDB = (
+  rows: ProductImportRow[]
+): { created: number; updated: number } => {
+  if (rows.length === 0) {
+    return { created: 0, updated: 0 };
+  }
+
+  const database = getDB();
+  let created = 0;
+  let updated = 0;
+
+  database.withTransactionSync(() => {
+    rows.forEach((row) => {
+      const products = database.getAllSync<Pick<Product, 'id' | 'name'>>(
+        'SELECT id, name FROM products'
+      );
+      const existing = products.find(
+        (product) => normalizeProductName(product.name) === normalizeProductName(row.name)
+      );
+
+      if (existing) {
+        const result = database.runSync(
+          'UPDATE products SET aliases = ?, unit = ?, unit_price = ? WHERE id = ?',
+          [row.aliases, row.unit, row.unit_price, existing.id]
+        );
+        updated += result.changes;
+        return;
+      }
+
+      const result = database.runSync(
+        'INSERT INTO products (name, aliases, unit, unit_price) VALUES (?, ?, ?, ?)',
+        [row.name.trim(), row.aliases, row.unit, row.unit_price]
+      );
+      created += result.changes;
+    });
+  });
+
+  return { created, updated };
+};
+
 export const deleteProductFromDB = (id: number) => {
   const database = getDB();
   database.runSync('DELETE FROM products WHERE id = ?', [id]);
@@ -158,8 +238,8 @@ export const saveInvoiceToDB = (invoice: Invoice): number => {
   const totals = calculateInvoiceTotals(invoice.items, invoice.discount_amount, invoice.paid_amount);
 
   const result = database.runSync(
-    `INSERT INTO invoices (invoice_code, customer_name, total_quantity, subtotal_amount, discount_amount, final_amount, paid_amount, change_amount, payment_method)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO invoices (invoice_code, customer_name, total_quantity, subtotal_amount, discount_amount, final_amount, paid_amount, change_amount, payment_method, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       invoice.invoice_code,
       invoice.customer_name || null,
@@ -170,6 +250,7 @@ export const saveInvoiceToDB = (invoice: Invoice): number => {
       totals.paid_amount || null,
       totals.change_amount || null,
       invoice.payment_method || 'chuyển khoản',
+      invoice.created_at || formatHoChiMinhDateTime(),
     ]
   );
 
@@ -186,19 +267,20 @@ export const saveInvoiceToDB = (invoice: Invoice): number => {
   return invoiceId;
 };
 
-export const getInvoicesFromDB = (range: 'today' | 'week' | 'month' | 'all' = 'all'): Invoice[] => {
+/**
+ * Xóa toàn bộ hóa đơn + chi tiết hóa đơn (reset dữ liệu báo cáo).
+ * KHÔNG động vào bảng products, cũng không đụng SecureStore (API key, cài đặt).
+ */
+export const clearAllInvoicesFromDB = () => {
   const database = getDB();
-  let dateQuery = '';
+  database.execSync(`
+    DELETE FROM invoice_items;
+    DELETE FROM invoices;
+  `);
+};
 
-  if (range === 'today') {
-    dateQuery = "WHERE date(created_at) = date('now', 'localtime')";
-  } else if (range === 'week') {
-    dateQuery = "WHERE date(created_at) >= date('now', '-7 days', 'localtime')";
-  } else if (range === 'month') {
-    dateQuery = "WHERE date(created_at) >= date('now', 'start of month', 'localtime')";
-  }
-
-  const invoices = database.getAllSync<Invoice>(`SELECT * FROM invoices ${dateQuery} ORDER BY created_at DESC`);
+const hydrateInvoices = (invoices: Invoice[]): Invoice[] => {
+  const database = getDB();
 
   return invoices.map((inv) => {
     const items = database.getAllSync<InvoiceItem>(
@@ -207,4 +289,43 @@ export const getInvoicesFromDB = (range: 'today' | 'week' | 'month' | 'all' = 'a
     );
     return { ...inv, items };
   });
+};
+
+export const getInvoicesByDateRangeFromDB = (
+  startDateKey: string,
+  endDateKey: string = startDateKey
+): Invoice[] => {
+  const database = getDB();
+  const invoices = database.getAllSync<Invoice>(
+    `SELECT * FROM invoices
+     WHERE date(created_at) >= ? AND date(created_at) <= ?
+     ORDER BY created_at DESC`,
+    [startDateKey, endDateKey]
+  );
+
+  return hydrateInvoices(invoices);
+};
+
+export const getInvoicesFromDB = (range: 'today' | 'week' | 'month' | 'all' = 'all'): Invoice[] => {
+  const database = getDB();
+  let dateQuery = '';
+  let dateParams: string[] = [];
+
+  if (range === 'today') {
+    dateQuery = 'WHERE date(created_at) = ?';
+    dateParams = [formatHoChiMinhDateKey()];
+  } else if (range === 'week') {
+    dateQuery = 'WHERE date(created_at) >= ?';
+    dateParams = [getHoChiMinhDaysAgoDateKey(7)];
+  } else if (range === 'month') {
+    dateQuery = 'WHERE date(created_at) >= ?';
+    dateParams = [getHoChiMinhMonthStartDateKey()];
+  }
+
+  const invoices = database.getAllSync<Invoice>(
+    `SELECT * FROM invoices ${dateQuery} ORDER BY created_at DESC`,
+    dateParams
+  );
+
+  return hydrateInvoices(invoices);
 };

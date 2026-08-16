@@ -27,7 +27,9 @@ jest.mock('expo-speech-recognition', () => {
 
 const speechModule = ExpoSpeechRecognitionModule as jest.Mocked<
   typeof ExpoSpeechRecognitionModule
->;
+> & {
+  addListener: jest.Mock;
+};
 const listeners = (
   jest.requireMock('expo-speech-recognition') as {
     __mockSpeechListeners: Record<string, ((event: unknown) => void) | undefined>;

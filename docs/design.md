@@ -1,7 +1,7 @@
 # VoiceBill - Google Stitch Mobile App Design Specification
 
 **Target Tool**: Google Stitch / AI Mobile UI Generator  
-**Design Aesthetic**: Modern Emerald & Glassmorphism (Phong cách 1)  
+**Design Aesthetic**: Deep Navy Voice AI & Glassmorphism  
 **Platform**: iOS & Android Mobile App (375x812 pt baseline)  
 
 ---
@@ -9,12 +9,15 @@
 ## 🎨 1. Design System & Style Tokens
 
 ### Color Palette
-- **Primary / Brand**: Emerald Green `#10B981` (Hover/Active: `#059669`, Muted: `#D1FAE5`)
-- **Background / Surface**: Slate Background `#F8FAFC`, Dark Header `#0F172A`, Pure White `#FFFFFF`
+- **Primary / Brand**: Deep Navy `#05163A`
+- **Secondary / Premium Accent**: Warm Gold `#B29469`
+- **Tertiary / Voice AI Accent**: Sky Cyan `#62B3EC`
+- **Neutral / Support**: Soft Blue `#76AAD1`
+- **White / Surface**: Pure White `#FFFFFF`
 - **Warnings / AI Confidence**: Amber Yellow `#F59E0B` (Warning Surface: `#FEF3C7`, Border: `#F59E0B`)
-- **Accents**: Ocean Blue `#2563EB`, Crimson Red `#EF4444` (Delete/Error)
-- **Text Primary**: Deep Charcoal `#0F172A`
-- **Text Secondary**: Muted Cool Gray `#64748B`
+- **Errors**: Crimson Red `#EF4444`
+- **Text Primary**: Deep Navy `#05163A`
+- **Text Secondary**: Soft Blue `#76AAD1`
 
 ### Typography & Shapes
 - **Font Family**: `Inter` / `Plus Jakarta Sans`

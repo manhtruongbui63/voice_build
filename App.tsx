@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { SafeAreaView, View, Text, TouchableOpacity, StyleSheet, StatusBar } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, StatusBar } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useFonts } from 'expo-font';
 import {
@@ -14,6 +14,7 @@ import {
   Inter_700Bold,
 } from '@expo-google-fonts/inter';
 import { initDB } from './src/services/db';
+import { AppHeader } from './src/components/AppHeader';
 import { SplashScreen } from './src/screens/SplashScreen';
 import { HomeScreen } from './src/screens/HomeScreen';
 import { ProductCatalogScreen } from './src/screens/ProductCatalogScreen';
@@ -26,10 +27,10 @@ type ActiveTab = 'home' | 'products' | 'history' | 'settings';
 type MaterialIconName = React.ComponentProps<typeof MaterialIcons>['name'];
 
 const TABS: { key: ActiveTab; label: string; icon: MaterialIconName }[] = [
-  { key: 'home', label: 'Bán Hàng', icon: 'mic' },
-  { key: 'products', label: 'Sản Phẩm', icon: 'inventory-2' },
-  { key: 'history', label: 'Báo Cáo', icon: 'analytics' },
-  { key: 'settings', label: 'Cài Đặt', icon: 'settings' },
+  { key: 'home', label: 'Bán hàng', icon: 'point-of-sale' },
+  { key: 'products', label: 'Sản phẩm', icon: 'inventory-2' },
+  { key: 'history', label: 'Báo cáo', icon: 'bar-chart' },
+  { key: 'settings', label: 'Cài đặt', icon: 'settings' },
 ];
 
 export default function App() {
@@ -67,9 +68,12 @@ export default function App() {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" />
-      
+    <View style={styles.container}>
+      <StatusBar barStyle="light-content" />
+
+      {/* Header dùng chung — render một lần, không unmount khi đổi tab (hết giật). */}
+      <AppHeader testID="app-header" />
+
       <View style={styles.content}>
         {activeTab === 'home' && (
           <HomeScreen onOpenSettings={() => setActiveTab('settings')} />
@@ -79,44 +83,60 @@ export default function App() {
         {activeTab === 'settings' && <SettingsScreen />}
       </View>
 
-      <View style={styles.navBar}>
+      <View testID="bottom-tab-bar" style={styles.navBar}>
         {TABS.map((tab) => {
           const active = activeTab === tab.key;
-          const tint = active ? colors.primaryContainer : colors.textSecondary;
+          const tint = active ? colors.secondary : colors.onSurfaceVariant;
           return (
-            <TouchableOpacity key={tab.key} style={styles.navItem} onPress={() => setActiveTab(tab.key)}>
-              <View style={[styles.navIconWrap, active && styles.navIconWrapActive]}>
-                <MaterialIcons name={tab.icon} size={24} color={tint} />
+            <TouchableOpacity
+              key={tab.key}
+              testID={`tab-${tab.key}`}
+              style={[styles.navItem, active && styles.navItemActive]}
+              onPress={() => setActiveTab(tab.key)}
+            >
+              <View style={styles.navIconWrap}>
+                <MaterialIcons testID={`tab-${tab.key}-icon`} name={tab.icon} size={24} color={tint} />
               </View>
               <Text style={[styles.navText, { color: tint }]}>{tab.label}</Text>
             </TouchableOpacity>
           );
         })}
       </View>
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.slateBg },
-  content: { flex: 1 },
+  content: { flex: 1, paddingBottom: 76 },
   navBar: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-around',
-    height: 72,
+    height: 76,
+    paddingHorizontal: 8,
+    paddingBottom: 10,
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.outlineVariantSoft,
-    backgroundColor: colors.white,
+    borderColor: 'rgba(197, 198, 207, 0.65)',
+    backgroundColor: 'rgba(255, 255, 255, 0.85)',
   },
-  navItem: { alignItems: 'center', gap: 6, minWidth: 64 },
+  navItem: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 2,
+    height: 52,
+    borderWidth: 0,
+  },
+  navItemActive: {},
   navIconWrap: {
-    width: 48,
-    height: 32,
-    borderRadius: 16,
+    minHeight: 28,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  navIconWrapActive: { backgroundColor: colors.primaryContainerFaint },
-  navText: { fontFamily: fontFamily.interBold, fontSize: 11, letterSpacing: 0.5, textTransform: 'uppercase' },
+  navText: { fontFamily: fontFamily.interBold, fontSize: 12, lineHeight: 16 },
 });

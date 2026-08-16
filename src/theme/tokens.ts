@@ -3,62 +3,63 @@
  * ------------------------------------------------------------------
  * Nguồn chân lý (single source of truth) cho màu sắc, typography, bo góc,
  * khoảng cách và đổ bóng của app. Được rút ra từ bản thiết kế Google Stitch
- * (xem docs/design/design-system.md).
+ * mới nhất (xem design/design.md).
  *
  * Quy ước: KHÔNG hard-code mã màu trong màn hình nữa — hãy import từ đây:
  *   import { colors, typography, radius, spacing } from '../theme/tokens';
  *
- * Màu chủ đạo (primary) đã thống nhất theo tokens Stitch: #006C49.
+ * Màu chủ đạo đã thống nhất theo design system: Deep Navy #05163A,
+ * Warm Gold #B29469, Voice AI Cyan #62B3EC, Soft Blue #76AAD1.
  */
 
-/** Bảng màu — theo hệ Material-style tokens xuất từ Stitch. */
+/** Bảng màu — giữ tên token ổn định để toàn app kế thừa design system mới. */
 export const colors = {
   // Brand / primary
-  primary: '#006C49', // màu chủ đạo (nút chính, nhấn mạnh)
+  primary: '#05163A', // Deep Navy: thương hiệu, header, text/CTA quan trọng
   onPrimary: '#FFFFFF',
-  primaryContainer: '#10B981', // emerald sáng — nền container/nhấn phụ
-  onPrimaryContainer: '#00422B',
-  primaryContainerFaint: 'rgba(16, 185, 129, 0.1)', // nền emerald 10% (badge, pill nav active)
-  primaryContainerBorder: 'rgba(16, 185, 129, 0.2)', // viền emerald 20%
-  primaryContainerGlow: 'rgba(16, 185, 129, 0.7)', // vòng sáng pulse quanh nút micro
-  primaryActive: '#059669', // trạng thái nhấn/hover
-  primarySoft: '#D1FAE5', // nền nhạt của primary (emerald-soft)
-  onPrimaryFixedVariant: '#005236', // chữ đậm trên nền primarySoft (vd badge "Chế độ AI")
-  inversePrimary: '#4EDEA3',
+  primaryContainer: '#62B3EC', // Voice AI Cyan: micro, pulse, điểm nhấn nhận dạng giọng nói
+  onPrimaryContainer: '#05163A',
+  primaryContainerFaint: 'rgba(98, 179, 236, 0.12)', // nền cyan nhẹ (badge, pill nav active)
+  primaryContainerBorder: 'rgba(98, 179, 236, 0.28)', // viền cyan nhẹ
+  primaryContainerGlow: 'rgba(98, 179, 236, 0.55)', // vòng sáng pulse quanh nút micro
+  primaryActive: '#B29469', // Warm Gold: trạng thái nhấn/nhấn mạnh doanh thu
+  primarySoft: '#EAF4FB', // nền nhạt của voice/brand blocks
+  onPrimaryFixedVariant: '#05163A', // chữ đậm trên nền primarySoft (vd badge "Chế độ AI")
+  inversePrimary: '#62B3EC',
 
   // Secondary / tertiary
-  secondary: '#565E74',
-  onSecondary: '#FFFFFF',
-  secondaryContainer: '#DAE2FD',
-  onSecondaryContainer: '#5C647A',
-  tertiary: '#0053DB', // Ocean Blue — edit/info
+  secondary: '#B29469',
+  onSecondary: '#05163A',
+  secondaryContainer: '#F4ECDZ',
+  onSecondaryContainer: '#5C4425',
+  tertiary: '#62B3EC',
   onTertiary: '#FFFFFF',
-  tertiaryContainer: '#7F9FFF',
+  tertiaryContainer: '#D9EEFC',
 
   // Surfaces / backgrounds
-  background: '#F4FBF4',
-  onBackground: '#161D19',
-  surface: '#F4FBF4',
-  surfaceDim: '#D4DCD5',
-  surfaceBright: '#F4FBF4',
+  background: '#F7FAFD',
+  onBackground: '#05163A',
+  surface: '#F7FAFD',
+  surfaceDim: '#D7E6F0',
+  surfaceBright: '#FFFFFF',
   surfaceContainerLowest: '#FFFFFF',
-  surfaceContainerLow: '#EEF6EE',
-  surfaceContainer: '#E8F0E9',
-  surfaceContainerHigh: '#E3EAE3',
-  surfaceContainerHighest: '#DDE4DD',
-  surfaceVariant: '#DDE4DD',
-  slateBg: '#F8FAFC', // nền slate dùng ở một số màn
+  surfaceContainerLow: '#F0F7FC',
+  surfaceContainer: '#EAF4FB',
+  surfaceContainerHigh: '#DDECF5',
+  surfaceContainerHighest: '#D7E6F0',
+  surfaceVariant: '#D7E6F0',
+  slateBg: '#F7FAFD',
 
   // Text
-  onSurface: '#161D19', // text chính
-  onSurfaceVariant: '#3C4A42', // text phụ
-  textSecondary: '#64748B', // cool gray muted
-  inverseSurface: '#2B322D',
-  inverseOnSurface: '#EBF3EB',
+  onSurface: '#05163A',
+  onSurfaceVariant: '#416C8A',
+  textSecondary: '#5E8FB2',
+  inverseSurface: '#05163A',
+  inverseOnSurface: '#FFFFFF',
 
   // Outline / border
-  outline: '#6C7A71',
-  outlineVariant: '#BBCABF',
+  outline: '#76AAD1',
+  outlineVariant: '#D7E6F0',
 
   // Trạng thái ngữ nghĩa
   error: '#BA1A1A',
@@ -67,26 +68,24 @@ export const colors = {
   errorCrimson: '#EF4444', // Delete/Error dạng sáng
   warningAmber: '#F59E0B', // cảnh báo AI confidence thấp
   warningSurface: '#FEF3C7', // nền cảnh báo
-  mint: '#34D399',
+  mint: '#62B3EC',
 
-  // Thang xám trung tính (neutral) — bộ màu đang dùng trong app (Tailwind gray).
-  // Dùng cho text/nền/viền trung tính. Thiết kế Stitch dùng neutral ngả xanh
-  // (on-surface #161D19…); ở đây giữ đúng giá trị hiện hành để không đổi giao diện.
-  neutral50: '#F9FAFB',
-  neutral100: '#F3F4F6',
-  neutral200: '#E5E7EB',
-  neutral300: '#D1D5DB',
-  neutral400: '#9CA3AF',
-  neutral500: '#6B7280',
-  neutral600: '#4B5563',
-  neutral700: '#374151',
-  neutral800: '#1F2937',
-  neutral900: '#111827',
+  // Thang neutral ngả xanh theo palette mới, dùng cho text/nền/viền trung tính.
+  neutral50: '#F7FAFD',
+  neutral100: '#EEF6FB',
+  neutral200: '#D7E6F0',
+  neutral300: '#B8D3E5',
+  neutral400: '#76AAD1',
+  neutral500: '#5E8FB2',
+  neutral600: '#416C8A',
+  neutral700: '#234A66',
+  neutral800: '#102B45',
+  neutral900: '#05163A',
   white: '#FFFFFF',
-  glassSurface: 'rgba(255, 255, 255, 0.7)', // nền thẻ kiểu glass (xấp xỉ backdrop-blur)
-  glassBorder: 'rgba(255, 255, 255, 0.85)',
-  outlineVariantSoft: 'rgba(187, 202, 191, 0.3)', // viền mảnh header/nav (outline-variant/30)
-  primarySoftFaint: 'rgba(209, 250, 229, 0.4)', // nền emerald-soft/20 (khối AI helper)
+  glassSurface: 'rgba(255, 255, 255, 0.82)', // nền thẻ kiểu glass (xấp xỉ backdrop-blur)
+  glassBorder: 'rgba(255, 255, 255, 0.92)',
+  outlineVariantSoft: 'rgba(118, 170, 209, 0.28)', // viền mảnh header/nav
+  primarySoftFaint: 'rgba(234, 244, 251, 0.75)', // nền voice/AI helper
   errorContainerFaint: 'rgba(255, 218, 214, 0.5)', // nền nút xóa (error-container/30)
 } as const;
 
@@ -146,7 +145,7 @@ export const elevation = {
     elevation: 4,
   },
   micPulse: {
-    shadowColor: '#10B981',
+    shadowColor: '#62B3EC',
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.4,
     shadowRadius: 40,

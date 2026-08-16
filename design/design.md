@@ -1,9 +1,9 @@
 # VoiceBill - Google Stitch Mobile & Tablet App Master Design Specification
 
 **Target Tool**: Google Stitch / AI Mobile UI Generator  
-**Design System Aesthetic**: Modern Emerald & Dark Slate Glassmorphism  
+**Design System Aesthetic**: Deep Navy Voice AI & Glassmorphism  
 **Target Form Factors**: Mobile Phones (375x812 pt) & Tablets / iPads (768x1024 pt & 1024x768 pt POS view)  
-**Primary Color Palette**: Emerald Green (`#10B981`), Dark Slate (`#0F172A`), Amber Yellow (`#F59E0B`), Ocean Blue (`#2563EB`)
+**Primary Color Palette**: Primary `#05163A`, Secondary `#B29469`, Tertiary `#62B3EC`, Neutral `#76AAD1`, White `#FFFFFF`
 
 ---
 
@@ -17,13 +17,16 @@
   - Navigation switches to Left Side Rail (Sidebar) or Top Navigation Bar on Landscape view.
 
 ### Color Tokens
-- **Primary Brand**: Emerald Green `#10B981` (Active: `#059669`, Soft Container: `#D1FAE5`)
-- **Background / Surface**: Slate Background `#F8FAFC`, Pure White `#FFFFFF`, Dark Slate Header `#0F172A`
+- **Primary Brand**: Deep Navy `#05163A`
+- **Secondary Accent**: Warm Gold `#B29469`
+- **Tertiary Accent**: Sky Cyan `#62B3EC`
+- **Neutral Support**: Soft Blue `#76AAD1`
+- **Background / Surface**: Pure White `#FFFFFF`, Deep Navy Header `#05163A`
 - **AI Warning / Confidence Alert**: Amber Yellow `#F59E0B` (Warning Surface: `#FEF3C7`, Warning Border: `#F59E0B`)
-- **Accent & Actions**: Ocean Blue `#2563EB` (Edit/Info), Crimson Red `#EF4444` (Delete/Error), Mint Green `#34D399`
+- **Error Accent**: Crimson Red `#EF4444`
 - **Text Hierarchy**:
-  - Primary Text: Dark Slate `#0F172A`
-  - Secondary Text: Muted Cool Gray `#64748B`
+  - Primary Text: Deep Navy `#05163A`
+  - Secondary Text: Soft Blue `#76AAD1`
   - Inverse Text: Pure White `#FFFFFF`
 
 ### Typography & Component Specs

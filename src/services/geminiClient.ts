@@ -64,12 +64,21 @@ export const mapGeminiError = (error: unknown): Error => {
   return new Error('Không thể xử lý yêu cầu Gemini');
 };
 
+// Tái sử dụng client theo apiKey để tránh chi phí khởi tạo lại mỗi lần gọi.
+let cachedClient: { apiKey: string; ai: GoogleGenAI } | null = null;
+const getClient = (apiKey: string): GoogleGenAI => {
+  if (cachedClient && cachedClient.apiKey === apiKey) return cachedClient.ai;
+  const ai = new GoogleGenAI({ apiKey });
+  cachedClient = { apiKey, ai };
+  return ai;
+};
+
 export const generateGeminiJson: GeminiJsonGenerator = async (
   apiKey,
   request
 ) => {
   try {
-    const ai = new GoogleGenAI({ apiKey });
+    const ai = getClient(apiKey);
     const response = await ai.models.generateContent({
       model: GEMINI_MODEL,
       contents: request.prompt,
